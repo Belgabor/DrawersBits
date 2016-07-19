@@ -8,6 +8,8 @@ import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.IVoidable;
 import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.LockAttribute;
 import com.jaquadro.minecraft.storagedrawers.storage.BaseDrawerData;
 import com.jaquadro.minecraft.storagedrawers.storage.ICentralInventory;
+import mods.belgabor.bitdrawers.BitDrawers;
+import mods.belgabor.bitdrawers.core.BDLogger;
 import mods.belgabor.bitdrawers.core.BitHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -36,7 +38,8 @@ public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, 
 
     @Override
     public void setStoredItem (ItemStack itemPrototype, int amount) {
-        System.out.println(String.format("setStoredItem %d %s %d", slot, itemPrototype==null?"null":itemPrototype.getDisplayName(), amount));
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("setStoredItem %d %s %d", slot, itemPrototype==null?"null":itemPrototype.getDisplayName(), amount);
         central.setStoredItem(slot, itemPrototype, amount);
         refresh();
 
@@ -55,9 +58,6 @@ public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, 
     @Override
     public boolean areItemsEqual(ItemStack item) {
         ItemStack protoStack = this.getStoredItemPrototype();
-        System.out.print("areItemsEqual ");
-        System.out.print(ItemStack.areItemsEqual(item, protoStack));
-        System.out.println(ItemStack.areItemStackTagsEqual(item, protoStack));
         return ItemStack.areItemsEqual(item, protoStack) && ItemStack.areItemStackTagsEqual(item, protoStack);
     }
 
@@ -112,7 +112,6 @@ public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, 
 
     @Override
     public boolean isEmpty () {
-        System.out.println("isEmpty");
         return getStoredItemPrototype() == null;
     }
 

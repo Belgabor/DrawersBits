@@ -9,6 +9,7 @@ import com.jaquadro.minecraft.storagedrawers.block.tile.TileEntityDrawers;
 import com.jaquadro.minecraft.storagedrawers.inventory.DrawerInventoryHelper;
 import mods.belgabor.bitdrawers.BitDrawers;
 import mods.belgabor.bitdrawers.block.tile.TileBitDrawers;
+import mods.belgabor.bitdrawers.core.BDLogger;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.IProperty;
@@ -164,7 +165,8 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
         if (world.isRemote)
             return;
 
-        System.out.println("onBlockClicked");
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("BlockBitDrawers:onBlockClicked");
         super.onBlockClicked(world, pos, player, side, hitX, hitY, hitZ, invertShift);
     }
 

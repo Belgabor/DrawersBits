@@ -8,12 +8,15 @@ import mod.chiselsandbits.api.ChiselsAndBitsAddon;
 import mod.chiselsandbits.api.IChiselAndBitsAPI;
 import mod.chiselsandbits.api.IChiselsAndBitsAddon;
 import mods.belgabor.bitdrawers.config.ConfigManager;
+import mods.belgabor.bitdrawers.core.BDLogger;
 import mods.belgabor.bitdrawers.core.BlockRegistry;
 import mods.belgabor.bitdrawers.core.CommonProxy;
+import mods.belgabor.bitdrawers.core.RecipeRegistry;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
@@ -38,10 +41,12 @@ public class BitDrawers implements IChiselsAndBitsAddon
     public static SimpleNetworkWrapper network;
     
     public static BlockRegistry blocks = new BlockRegistry();
+    public static RecipeRegistry recipes = new RecipeRegistry();
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event)
     {
+        BDLogger.logger = event.getModLog();
         config = new ConfigManager(event.getSuggestedConfigurationFile());
         network = NetworkRegistry.INSTANCE.newSimpleChannel(MODID);
         blocks.init();
@@ -53,6 +58,11 @@ public class BitDrawers implements IChiselsAndBitsAddon
         else {
             network.registerMessage(CountUpdateMessage.HandlerStub.class, CountUpdateMessage.class, 1, Side.CLIENT);
         }
+    }
+    
+    @EventHandler
+    public void postInit(FMLPostInitializationEvent event) {
+        recipes.init();
     }
     
     @Override

@@ -10,6 +10,7 @@ import com.jaquadro.minecraft.storagedrawers.storage.BaseDrawerData;
 import com.jaquadro.minecraft.storagedrawers.storage.ICentralInventory;
 import mod.chiselsandbits.api.ItemType;
 import mods.belgabor.bitdrawers.BitDrawers;
+import mods.belgabor.bitdrawers.core.BDLogger;
 import mods.belgabor.bitdrawers.core.BitHelper;
 import mods.belgabor.bitdrawers.storage.BitDrawerData;
 import net.minecraft.block.state.IBlockState;
@@ -64,7 +65,6 @@ public class TileBitDrawers extends TileEntityDrawers
 
     @Override
     protected IDrawer createDrawer (int slot) {
-        System.out.println("createDrawer");
         return new BitDrawerData(getCentralInventory(), slot);
     }
     
@@ -89,10 +89,10 @@ public class TileBitDrawers extends TileEntityDrawers
 
     @Override
     public int putItemsIntoSlot (int slot, ItemStack stack, int count) {
-        System.out.println(String.format("putItemsIntoSlot %d %s %d", slot, stack==null?"null":stack.getDisplayName(), count));
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("TileBitDrawers:putItemsIntoSlot %d %s %d", slot, stack==null?"null":stack.getDisplayName(), count);
         int added = 0;
         if (stack != null && convRate != null && convRate[0] == 0) {
-            System.out.println("calling populateSlots");
             populateSlots(stack);
 
             for (int i = 0; i < getDrawerCount(); i++) {
@@ -173,20 +173,17 @@ public class TileBitDrawers extends TileEntityDrawers
     }
 
     private void populateSlots (ItemStack stack) {
-        System.out.println("populateSlots");
         if (BitDrawers.cnb_api.getItemType(stack) == ItemType.CHISLED_BIT) {
             ItemStack fullStack = BitHelper.getBlock(stack);
             if (fullStack != null) {
                 populateSlot(0, fullStack, 4096);
                 populateSlot(1, stack, 1);
-                System.out.println("Chiseled bit");
             }
         } else {
             ItemStack bitStack = BitHelper.getBit(stack);
             if (bitStack != null) {
                 populateSlot(0, stack, 4096);
                 populateSlot(1, bitStack, 1);
-                System.out.println("Something else");
             }
         }
 
@@ -208,7 +205,8 @@ public class TileBitDrawers extends TileEntityDrawers
 
         @Override
         public IDrawer setStoredItem (int slot, ItemStack itemPrototype, int amount) {
-            System.out.println(String.format("setStoredItem %d %s %d", slot, itemPrototype==null?"null":itemPrototype.getDisplayName(), amount));
+            if (BitDrawers.config.debugTrace)
+                BDLogger.info("setStoredItem %d %s %d", slot, itemPrototype==null?"null":itemPrototype.getDisplayName(), amount);
             if (itemPrototype != null && convRate != null && convRate[0] == 0) {
                 populateSlots(itemPrototype);
                 for (int i = 0; i < getDrawerCount(); i++) {
@@ -250,7 +248,8 @@ public class TileBitDrawers extends TileEntityDrawers
 
         @Override
         public void setStoredItemCount (int slot, int amount) {
-            System.out.println(String.format("setStoredItemCount %d %d", slot, amount));
+            if (BitDrawers.config.debugTrace)
+                BDLogger.info("BitCentralInventory:setStoredItemCount %d %d", slot, amount);
             if (convRate == null || convRate[slot] == 0)
                 return;
 
