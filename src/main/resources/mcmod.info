@@ -1,0 +1,16 @@
+[
+{
+  "modid": "bitdrawers",
+  "name": "Bit Drawers",
+  "description": "Specialized storage drawers for Chisels & Bits.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Belgabor"],
+  "credits": "AlgorithmX2 for Chisels & Bits, jaquadro for Storage Drawers",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]

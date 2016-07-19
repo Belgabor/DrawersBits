@@ -1,0 +1,9 @@
+{
+    "parent": "bitdrawers:block/drawer_orientable",
+    "textures": {
+        "top": "bitdrawers:blocks/drawers_comp_side",
+        "front": "bitdrawers:blocks/drawers_comp_front_2",
+        "side": "bitdrawers:blocks/drawers_comp_side_2",
+        "trim": "bitdrawers:blocks/drawers_comp_trim"
+    }
+}
