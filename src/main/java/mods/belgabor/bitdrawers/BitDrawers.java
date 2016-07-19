@@ -22,10 +22,11 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
 
-@Mod(modid = BitDrawers.MODID, version = BitDrawers.VERSION, dependencies = "required-after:chiselsandbits;required-after:StorageDrawers@[1.10.2-3.2.1,);required-after:Chameleon")
+@Mod(modid = BitDrawers.MODID, version = BitDrawers.VERSION, name = BitDrawers.MODNAME, dependencies = "required-after:chiselsandbits;required-after:StorageDrawers@[1.10.2-3.2.1,);required-after:Chameleon")
 @ChiselsAndBitsAddon
 public class BitDrawers implements IChiselsAndBitsAddon
 {
+    public static final String MODNAME = "Drawers & Bits";
     public static final String MODID = "bitdrawers";
     public static final String VERSION = "0.1";
     

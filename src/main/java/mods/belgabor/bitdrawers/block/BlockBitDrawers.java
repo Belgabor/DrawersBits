@@ -159,14 +159,21 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
 
         super.breakBlock(world, pos, state);
     }
-    
+
+    @Override
+    public void onBlockClicked(World world, BlockPos pos, EntityPlayer player) {
+        if (world.isRemote && BitDrawers.config.debugTrace)
+            BDLogger.info("BlockBitDrawers:onBlockClicked");
+        super.onBlockClicked(world, pos, player);
+    }
+
     @Override
     public void onBlockClicked (final World world, final BlockPos pos, final EntityPlayer player, final EnumFacing side, final float hitX, final float hitY, final float hitZ, final boolean invertShift) {
         if (world.isRemote)
             return;
 
         if (BitDrawers.config.debugTrace)
-            BDLogger.info("BlockBitDrawers:onBlockClicked");
+            BDLogger.info("BlockBitDrawers:onBlockClicked2");
         super.onBlockClicked(world, pos, player, side, hitX, hitY, hitZ, invertShift);
     }
 
