@@ -2,12 +2,11 @@ package mods.belgabor.bitdrawers.item;
 
 import com.jaquadro.minecraft.chameleon.resources.IItemMeshMapper;
 import com.jaquadro.minecraft.chameleon.resources.IItemVariantProvider;
-import com.jaquadro.minecraft.storagedrawers.StorageDrawers;
 import com.jaquadro.minecraft.storagedrawers.block.EnumCompDrawer;
 import com.jaquadro.minecraft.storagedrawers.block.tile.TileEntityDrawers;
-import com.jaquadro.minecraft.storagedrawers.config.ConfigManager;
 import com.mojang.realmsclient.gui.ChatFormatting;
 import mods.belgabor.bitdrawers.BitDrawers;
+import mods.belgabor.bitdrawers.config.ConfigManager;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
@@ -53,7 +52,7 @@ public class ItemBitDrawer extends ItemBlock implements IItemMeshMapper, IItemVa
             if (side != EnumFacing.UP && side != EnumFacing.DOWN)
                 tile.setDirection(side.ordinal());
 
-            int initCapacity = StorageDrawers.config.getBlockBaseStorage("compdrawers");
+            int initCapacity = BitDrawers.config.bitdrawerStorage;
             tile.setDrawerCapacity(initCapacity);
 
             if (stack.hasTagCompound() && stack.getTagCompound().hasKey("tile"))
@@ -68,10 +67,9 @@ public class ItemBitDrawer extends ItemBlock implements IItemMeshMapper, IItemVa
     @Override
     @SideOnly(Side.CLIENT)
     public void addInformation (ItemStack itemStack, EntityPlayer player, List<String> list, boolean par4) {
-        ConfigManager config = StorageDrawers.config;
+        ConfigManager config = BitDrawers.config;
 
-        int count = config.getBlockBaseStorage("compdrawers");
-        list.add(I18n.translateToLocalFormatted("storageDrawers.drawers.description", count));
+        list.add(I18n.translateToLocalFormatted("storageDrawers.drawers.description", config.bitdrawerStorage));
 
         if (itemStack.hasTagCompound() && itemStack.getTagCompound().hasKey("tile")) {
             list.add(ChatFormatting.YELLOW + I18n.translateToLocal("storageDrawers.drawers.sealed"));

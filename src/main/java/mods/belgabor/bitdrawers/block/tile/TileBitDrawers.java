@@ -1,32 +1,27 @@
 package mods.belgabor.bitdrawers.block.tile;
 
+import com.jaquadro.minecraft.storagedrawers.StorageDrawers;
 import com.jaquadro.minecraft.storagedrawers.api.storage.IDrawer;
 import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.LockAttribute;
 import com.jaquadro.minecraft.storagedrawers.block.tile.TileEntityDrawers;
+import com.jaquadro.minecraft.storagedrawers.inventory.ContainerDrawersComp;
 import com.jaquadro.minecraft.storagedrawers.network.CountUpdateMessage;
 import com.jaquadro.minecraft.storagedrawers.storage.BaseDrawerData;
 import com.jaquadro.minecraft.storagedrawers.storage.ICentralInventory;
-import mod.chiselsandbits.api.APIExceptions;
-import mod.chiselsandbits.api.IBitAccess;
-import mod.chiselsandbits.api.IBitBrush;
 import mod.chiselsandbits.api.ItemType;
 import mods.belgabor.bitdrawers.BitDrawers;
 import mods.belgabor.bitdrawers.core.BitHelper;
 import mods.belgabor.bitdrawers.storage.BitDrawerData;
-import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.inventory.Container;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import org.lwjgl.Sys;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by Belgabor on 02.06.2016.
@@ -72,6 +67,17 @@ public class TileBitDrawers extends TileEntityDrawers
         System.out.println("createDrawer");
         return new BitDrawerData(getCentralInventory(), slot);
     }
+    
+    @Override
+    public Container createContainer (InventoryPlayer playerInventory, EntityPlayer playerIn) {
+        return new ContainerDrawersComp(playerInventory, this);
+    }
+
+    @Override
+    public String getGuiID () {
+        return StorageDrawers.MOD_ID + ":compDrawers";
+    }
+
 
     @Override
     public boolean isDrawerEnabled (int slot) {
@@ -201,7 +207,7 @@ public class TileBitDrawers extends TileEntityDrawers
         }
 
         @Override
-        public void setStoredItem (int slot, ItemStack itemPrototype, int amount) {
+        public IDrawer setStoredItem (int slot, ItemStack itemPrototype, int amount) {
             System.out.println(String.format("setStoredItem %d %s %d", slot, itemPrototype==null?"null":itemPrototype.getDisplayName(), amount));
             if (itemPrototype != null && convRate != null && convRate[0] == 0) {
                 populateSlots(itemPrototype);
@@ -227,6 +233,7 @@ public class TileBitDrawers extends TileEntityDrawers
             else if (itemPrototype == null) {
                 setStoredItemCount(slot, 0);
             }
+            return getDrawer(slot);
         }
 
         @Override
@@ -258,7 +265,7 @@ public class TileBitDrawers extends TileEntityDrawers
                 pooledCount = poolMax;
 
             if (pooledCount != oldCount) {
-                if (pooledCount != 0 || TileBitDrawers.this.isLocked(LockAttribute.LOCK_POPULATED))
+                if (pooledCount != 0 || TileBitDrawers.this.isItemLocked(LockAttribute.LOCK_POPULATED))
                     markAmountDirty();
                 else {
                     clear();
@@ -367,7 +374,7 @@ public class TileBitDrawers extends TileEntityDrawers
 
         @Override
         public boolean isLocked (int slot, LockAttribute attr) {
-            return TileBitDrawers.this.isLocked(attr);
+            return TileBitDrawers.this.isItemLocked(attr);
         }
 
         @Override

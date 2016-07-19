@@ -1,5 +1,6 @@
 package mods.belgabor.bitdrawers.storage;
 
+import com.jaquadro.minecraft.storagedrawers.api.storage.IDrawer;
 import com.jaquadro.minecraft.storagedrawers.api.storage.IFractionalDrawer;
 import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.ILockable;
 import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.IShroudable;
@@ -41,6 +42,15 @@ public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, 
 
         // markDirty
     }
+    
+    @Override
+    public IDrawer setStoredItemRedir (ItemStack itemPrototype, int amount) {
+        IDrawer target = central.setStoredItem(slot, itemPrototype, amount);
+        refresh();
+
+        return target;
+    }
+
 
     @Override
     public boolean areItemsEqual(ItemStack item) {

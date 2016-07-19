@@ -1,2 +1,6 @@
 tile.bitdrawer.name=Bit Drawer
 bitDrawers.container.bitDrawers=Bit Drawer
+bitDrawers.config.prop.enableDebugLogging=Enable Debug Logging
+bitDrawers.config.prop.enableDebugLogging.tooltip=Prints extra information to the logs.
+bitDrawers.config.prop.bitdrawerBaseStorage=Bit Drawer Base Storage
+bitDrawers.config.prop.bitdrawerBaseStorage.tooltip=Base storage of a bit drawer (stacks).

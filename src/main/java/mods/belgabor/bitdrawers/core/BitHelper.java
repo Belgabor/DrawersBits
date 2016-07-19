@@ -41,7 +41,9 @@ public class BitHelper {
                 IBlockState blockState = bitBrush.getState();
                 if (blockState != null) {
                     Block block = blockState.getBlock();
-                    return new ItemStack(block, 1, block.damageDropped(blockState));
+                    ItemStack newStack =  new ItemStack(block, 1, block.damageDropped(blockState));
+                    if (newStack.getItem() != null)
+                        return newStack;
                 }
             }
         }

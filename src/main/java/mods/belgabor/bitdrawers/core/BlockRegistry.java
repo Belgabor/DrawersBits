@@ -3,10 +3,10 @@ package mods.belgabor.bitdrawers.core;
 import com.jaquadro.minecraft.chameleon.Chameleon;
 import com.jaquadro.minecraft.chameleon.resources.ModelRegistry;
 import com.jaquadro.minecraft.storagedrawers.client.renderer.TileEntityDrawersRenderer;
-import com.jaquadro.minecraft.storagedrawers.item.ItemCompDrawers;
 import mods.belgabor.bitdrawers.block.BlockBitDrawers;
 import mods.belgabor.bitdrawers.block.tile.TileBitDrawers;
 import mods.belgabor.bitdrawers.client.model.BitDrawerModel;
+import mods.belgabor.bitdrawers.item.ItemBitDrawer;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
@@ -21,7 +21,7 @@ public class BlockRegistry {
     public void init() {
         bitDrawer = new BlockBitDrawers("bitdrawer");
         GameRegistry.register(bitDrawer);
-        GameRegistry.register((new ItemCompDrawers(bitDrawer)).setRegistryName(bitDrawer.getRegistryName()));
+        GameRegistry.register((new ItemBitDrawer(bitDrawer)).setRegistryName(bitDrawer.getRegistryName()));
         GameRegistry.registerTileEntity(TileBitDrawers.class, bitDrawer.getRegistryName().toString());
     }
 

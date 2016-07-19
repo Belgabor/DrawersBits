@@ -7,6 +7,7 @@ import com.jaquadro.minecraft.storagedrawers.network.CountUpdateMessage;
 import mod.chiselsandbits.api.ChiselsAndBitsAddon;
 import mod.chiselsandbits.api.IChiselAndBitsAPI;
 import mod.chiselsandbits.api.IChiselsAndBitsAddon;
+import mods.belgabor.bitdrawers.config.ConfigManager;
 import mods.belgabor.bitdrawers.core.BlockRegistry;
 import mods.belgabor.bitdrawers.core.CommonProxy;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -18,7 +19,7 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
 
-@Mod(modid = BitDrawers.MODID, version = BitDrawers.VERSION, dependencies = "required-after:chiselsandbits;required-after:StorageDrawers;required-after:Chameleon")
+@Mod(modid = BitDrawers.MODID, version = BitDrawers.VERSION, dependencies = "required-after:chiselsandbits;required-after:StorageDrawers@[1.10.2-3.2.1,);required-after:Chameleon")
 @ChiselsAndBitsAddon
 public class BitDrawers implements IChiselsAndBitsAddon
 {
@@ -30,6 +31,7 @@ public class BitDrawers implements IChiselsAndBitsAddon
             serverSide = "mods.belgabor.bitdrawers.core.CommonProxy"
     )
     public static CommonProxy proxy;
+    public static ConfigManager config;
     
     public static IChiselAndBitsAPI cnb_api;
 
@@ -40,6 +42,7 @@ public class BitDrawers implements IChiselsAndBitsAddon
     @EventHandler
     public void preInit(FMLPreInitializationEvent event)
     {
+        config = new ConfigManager(event.getSuggestedConfigurationFile());
         network = NetworkRegistry.INSTANCE.newSimpleChannel(MODID);
         blocks.init();
         proxy.initClient();
