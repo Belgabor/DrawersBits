@@ -11,10 +11,10 @@ import com.jaquadro.minecraft.storagedrawers.inventory.DrawerInventoryHelper;
 import com.jaquadro.minecraft.storagedrawers.security.SecurityManager;
 import mod.chiselsandbits.api.*;
 import mod.chiselsandbits.chiseledblock.ItemBlockChiseled;
-import mod.chiselsandbits.core.ChiselsAndBits;
 import mods.belgabor.bitdrawers.BitDrawers;
 import mods.belgabor.bitdrawers.block.tile.TileBitDrawers;
 import mods.belgabor.bitdrawers.core.BDLogger;
+import mods.belgabor.bitdrawers.core.BitHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
@@ -275,10 +275,10 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
             if (bit == null || material == null)
                 return;
             IBitBrush brush;
-            BitCopy visitor;
+            BitHelper.BitCopy visitor;
             try {
                 brush = BitDrawers.cnb_api.createBrush(bit);
-                visitor = new BitCopy(BitDrawers.cnb_api.createBitItem(held), brush, set);
+                visitor = new BitHelper.BitCopy(BitDrawers.cnb_api.createBitItem(held), brush, set);
             } catch (APIExceptions.InvalidBitItem e) {
                 return;
             }
@@ -367,30 +367,4 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
         return retrieved;
     }
 
-    private static class BitCopy implements IBitVisitor {
-        private final IBitAccess source;
-        private final IBitBrush bit;
-        private final IBitBrush air;
-        private final boolean set;
-        public int count = 0;
-        
-        public BitCopy(IBitAccess source, IBitBrush bit, boolean set) throws APIExceptions.InvalidBitItem {
-            if (source == null)
-                throw new APIExceptions.InvalidBitItem();
-            this.source = source;
-            this.bit = bit;
-            this.air = BitDrawers.cnb_api.createBrush(null);
-            this.set = set;
-        }
-
-        @Override
-        public IBitBrush visitBit(int x, int y, int z, IBitBrush dummy) {
-            IBitBrush sourceBit = source.getBitAt(x, y, z);
-            if (sourceBit.isAir() == set) {
-                count++;
-                return bit;
-            } else
-                return air;
-        }
-    }
 }

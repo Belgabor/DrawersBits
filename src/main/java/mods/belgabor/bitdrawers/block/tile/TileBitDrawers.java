@@ -8,8 +8,7 @@ import com.jaquadro.minecraft.storagedrawers.inventory.ContainerDrawersComp;
 import com.jaquadro.minecraft.storagedrawers.network.CountUpdateMessage;
 import com.jaquadro.minecraft.storagedrawers.storage.BaseDrawerData;
 import com.jaquadro.minecraft.storagedrawers.storage.ICentralInventory;
-import mod.chiselsandbits.api.IBitBag;
-import mod.chiselsandbits.api.ItemType;
+import mod.chiselsandbits.api.*;
 import mods.belgabor.bitdrawers.BitDrawers;
 import mods.belgabor.bitdrawers.core.BDLogger;
 import mods.belgabor.bitdrawers.core.BitHelper;
@@ -132,24 +131,66 @@ public class TileBitDrawers extends TileEntityDrawers
         if (BitDrawers.config.debugTrace)
             BDLogger.info("TileBitDrawers:putItemsIntoSlot %d %s %d", slot, stack==null?"null":stack.getDisplayName(), count);
         int added = 0;
-        if (stack != null && convRate != null && convRate[0] == 0) {
-            populateSlots(stack);
+        if (stack != null) {
+            if (BitDrawers.cnb_api.getItemType(stack) == ItemType.CHISLED_BLOCK) {
+                return putChiseledBlockIntoDrawer(stack, count);
+            } else if (convRate != null && convRate[0] == 0) {
+                populateSlots(stack);
 
-            for (int i = 0; i < getDrawerCount(); i++) {
-                if (BaseDrawerData.areItemsEqual(protoStack[i], stack))
-                    added = super.putItemsIntoSlot(i, stack, count);
+                for (int i = 0; i < getDrawerCount(); i++) {
+                    if (BaseDrawerData.areItemsEqual(protoStack[i], stack))
+                        added = super.putItemsIntoSlot(i, stack, count);
+                }
+
+                for (int i = 0; i < getDrawerCount(); i++) {
+                    IDrawer drawer = getDrawer(i);
+                    if (drawer instanceof BitDrawerData)
+                        ((BitDrawerData) drawer).refresh();
+                }
+
             }
-
-            for (int i = 0; i < getDrawerCount(); i++) {
-                IDrawer drawer = getDrawer(i);
-                if (drawer instanceof BitDrawerData)
-                    ((BitDrawerData) drawer).refresh();
-            }
-
-
         }
 
         return added + super.putItemsIntoSlot(slot, stack, count);
+    }
+    
+    public int putChiseledBlockIntoDrawer (ItemStack stack, int count) {
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("TileBitDrawers:putChiseledBlockIntoDrawer %s %d", stack==null?"null":stack.getDisplayName(), count);
+        count = Math.min(count, stack.stackSize);
+        IDrawer drawer = getDrawer(1);
+        IBitAccess access = BitDrawers.cnb_api.createBitItem(stack);
+        if (convRate == null || convRate[0] == 0 || access == null)
+            return 0;
+        BitHelper.BitCounter counter = new BitHelper.BitCounter();
+        access.visitBits(counter);
+        IBitBrush stored = null;
+        try {
+            stored = BitDrawers.cnb_api.createBrush(drawer.getStoredItemPrototype());
+        } catch (APIExceptions.InvalidBitItem invalidBitItem) {
+            BDLogger.error("Failed to create bit brush for stored bit");
+            BDLogger.error(invalidBitItem);
+            return 0;
+        }
+        if (counter.counts.size() != 1 || !counter.counts.containsKey(stored.getStateID()) || counter.counts.get(stored.getStateID()) == 0) {
+            if (BitDrawers.config.debugTrace)
+                BDLogger.info("TileBitDrawers:putChiseledBlockIntoDrawer Not Matched %d", counter.counts.size());
+            return 0;
+        }
+        
+        int bitSize = counter.counts.get(stored.getStateID());
+        int canStore = isVoid()?count:drawer.getRemainingCapacity() / bitSize;
+        int toStore = Math.min(canStore, count);
+        int toStoreBits = toStore * bitSize;
+        ItemStack store = drawer.getStoredItemPrototype().copy();
+        store.stackSize = toStoreBits;
+        int storedBits = super.putItemsIntoSlot(1, store, toStoreBits);
+        if (storedBits != toStoreBits) {
+            BDLogger.error("Couldn't store bits when inserting chiseled block. This is not supposed to happen at this point.");
+            toStore = storedBits / bitSize;
+        }
+        stack.stackSize -= toStore;
+        return toStore;
     }
 
     @Override

@@ -23,5 +23,9 @@ public class BDLogger {
     public static void error(String message, Object ... args) {
         log(Level.ERROR, message, args);
     }
+    
+    public static void error(Throwable t) {
+        logger.catching(Level.ERROR, t);
+    }
 
 }
