@@ -9,10 +9,13 @@ import com.jaquadro.minecraft.storagedrawers.block.dynamic.StatusModelData;
 import com.jaquadro.minecraft.storagedrawers.block.tile.TileEntityDrawers;
 import com.jaquadro.minecraft.storagedrawers.inventory.DrawerInventoryHelper;
 import com.jaquadro.minecraft.storagedrawers.security.SecurityManager;
-import mod.chiselsandbits.api.IBitBag;
+import mod.chiselsandbits.api.*;
+import mod.chiselsandbits.chiseledblock.ItemBlockChiseled;
+import mod.chiselsandbits.core.ChiselsAndBits;
 import mods.belgabor.bitdrawers.BitDrawers;
 import mods.belgabor.bitdrawers.block.tile.TileBitDrawers;
 import mods.belgabor.bitdrawers.core.BDLogger;
+import net.minecraft.block.Block;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.IProperty;
@@ -25,7 +28,9 @@ import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
@@ -222,9 +227,10 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
         ItemStack item;
         
         ItemStack held = player.inventory.getCurrentItem();
+        ItemType heldType = BitDrawers.cnb_api.getItemType(held);
         IItemHandler handler = held==null?null:held.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
         if (handler instanceof IBitBag) {
-            IBitBag bag = (IBitBag) handler; 
+            IBitBag bag = (IBitBag) handler;
             drawer = tileDrawers.getDrawer(1);
             if (drawer.getStoredItemPrototype() == null)
                 return;
@@ -259,6 +265,44 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
             }
             if (retrieved > 0 && !world.isRemote)
                 world.playSound(null, pos.getX() + .5f, pos.getY() + .5f, pos.getZ() + .5f, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, .2f, ((world.rand.nextFloat() - world.rand.nextFloat()) * .7f + 1) * 2);
+            item = null;
+        } else if (slot == 1 && heldType != null && heldType.isBitAccess) {
+            boolean set = heldType == ItemType.NEGATIVE_DESIGN;
+            ItemStack bit = drawer.getStoredItemPrototype();
+            Block material = null;
+            if (tileDrawers.getDrawer(0).getStoredItemPrototype().getItem() instanceof ItemBlock)
+                material = ((ItemBlock) tileDrawers.getDrawer(0).getStoredItemPrototype().getItem()).getBlock();
+            if (bit == null || material == null)
+                return;
+            IBitBrush brush;
+            BitCopy visitor;
+            try {
+                brush = BitDrawers.cnb_api.createBrush(bit);
+                visitor = new BitCopy(BitDrawers.cnb_api.createBitItem(held), brush, set);
+            } catch (APIExceptions.InvalidBitItem e) {
+                return;
+            }
+            //item = new ItemStack(ChiselsAndBits.getBlocks().getConversion(material.getDefaultState()), 1);
+            IBitAccess resultAccessor = BitDrawers.cnb_api.createBitItem(null);
+            resultAccessor.visitBits(visitor);
+            if (visitor.count == 0)
+                return;
+            NBTTagCompound tag = held.getTagCompound();
+            EnumFacing facing = null;
+            if (tag != null && tag.hasKey(ItemBlockChiseled.NBT_SIDE)) {
+                int f = Math.max(0, Math.min(5, tag.getByte(ItemBlockChiseled.NBT_SIDE)));
+                facing = EnumFacing.VALUES[f];
+            }
+            item = resultAccessor.getBitsAsItem(facing, ItemType.CHISLED_BLOCK, false);
+            if (player.isSneaking() != invertShift)
+                item.stackSize = 64;
+            else
+                item.stackSize = 1;
+            item.stackSize = Math.min(item.stackSize, drawer.getStoredItemCount() / visitor.count);
+            if (item.stackSize == 0)
+                return;
+            
+            drawer.setStoredItemCount(drawer.getStoredItemCount() - (item.stackSize * visitor.count));
         } else {
             if (player.isSneaking() != invertShift)
                 item = tileDrawers.takeItemsFromSlot(slot, drawer.getStoredItemStackSize());
@@ -268,15 +312,15 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
             if (BitDrawers.config.debugTrace)
                 BDLogger.info((item == null) ? "  null item" : "  " + item.toString());
 
-            IBlockState state = world.getBlockState(pos);
-            if (item != null && item.stackSize > 0) {
-                if (!player.inventory.addItemStackToInventory(item)) {
-                    dropItemStack(world, pos.offset(side), player, item);
-                    world.notifyBlockUpdate(pos, state, state, 3);
-                }
-                else if (!world.isRemote)
-                    world.playSound(null, pos.getX() + .5f, pos.getY() + .5f, pos.getZ() + .5f, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, .2f, ((world.rand.nextFloat() - world.rand.nextFloat()) * .7f + 1) * 2);
+        }
+        IBlockState state = world.getBlockState(pos);
+        if (item != null && item.stackSize > 0) {
+            if (!player.inventory.addItemStackToInventory(item)) {
+                dropItemStack(world, pos.offset(side), player, item);
+                world.notifyBlockUpdate(pos, state, state, 3);
             }
+            else if (!world.isRemote)
+                world.playSound(null, pos.getX() + .5f, pos.getY() + .5f, pos.getZ() + .5f, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, .2f, ((world.rand.nextFloat() - world.rand.nextFloat()) * .7f + 1) * 2);
         }
         
     }
@@ -323,4 +367,30 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
         return retrieved;
     }
 
+    private static class BitCopy implements IBitVisitor {
+        private final IBitAccess source;
+        private final IBitBrush bit;
+        private final IBitBrush air;
+        private final boolean set;
+        public int count = 0;
+        
+        public BitCopy(IBitAccess source, IBitBrush bit, boolean set) throws APIExceptions.InvalidBitItem {
+            if (source == null)
+                throw new APIExceptions.InvalidBitItem();
+            this.source = source;
+            this.bit = bit;
+            this.air = BitDrawers.cnb_api.createBrush(null);
+            this.set = set;
+        }
+
+        @Override
+        public IBitBrush visitBit(int x, int y, int z, IBitBrush dummy) {
+            IBitBrush sourceBit = source.getBitAt(x, y, z);
+            if (sourceBit.isAir() == set) {
+                count++;
+                return bit;
+            } else
+                return air;
+        }
+    }
 }
