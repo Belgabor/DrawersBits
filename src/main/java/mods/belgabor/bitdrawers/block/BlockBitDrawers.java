@@ -1,12 +1,15 @@
 package mods.belgabor.bitdrawers.block;
 
 import com.jaquadro.minecraft.storagedrawers.api.pack.BlockType;
+import com.jaquadro.minecraft.storagedrawers.api.storage.IDrawer;
 import com.jaquadro.minecraft.storagedrawers.api.storage.INetworked;
 import com.jaquadro.minecraft.storagedrawers.block.BlockDrawers;
 import com.jaquadro.minecraft.storagedrawers.block.EnumCompDrawer;
 import com.jaquadro.minecraft.storagedrawers.block.dynamic.StatusModelData;
 import com.jaquadro.minecraft.storagedrawers.block.tile.TileEntityDrawers;
 import com.jaquadro.minecraft.storagedrawers.inventory.DrawerInventoryHelper;
+import com.jaquadro.minecraft.storagedrawers.security.SecurityManager;
+import mod.chiselsandbits.api.IBitBag;
 import mods.belgabor.bitdrawers.BitDrawers;
 import mods.belgabor.bitdrawers.block.tile.TileBitDrawers;
 import mods.belgabor.bitdrawers.core.BDLogger;
@@ -18,18 +21,27 @@ import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.property.ExtendedBlockState;
 import net.minecraftforge.common.property.IUnlistedProperty;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.items.CapabilityItemHandler;
+import net.minecraftforge.items.IItemHandler;
 
 import java.util.List;
 
@@ -171,11 +183,144 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
     public void onBlockClicked (final World world, final BlockPos pos, final EntityPlayer player, final EnumFacing side, final float hitX, final float hitY, final float hitZ, final boolean invertShift) {
         if (world.isRemote)
             return;
-
+        
         if (BitDrawers.config.debugTrace)
-            BDLogger.info("BlockBitDrawers:onBlockClicked2");
-        super.onBlockClicked(world, pos, player, side, hitX, hitY, hitZ, invertShift);
+            BDLogger.info("BlockBitDrawers:onBlockClicked %f %f %f", hitX, hitY, hitZ);
+
+        ((WorldServer)world).addScheduledTask(new Runnable()
+        {
+            @Override
+            public void run () {
+                BlockBitDrawers.this.onBlockClickedAsync(world, pos, player, side, hitX, hitY, hitZ, invertShift);
+            }
+        });
     }
 
+    protected void onBlockClickedAsync (World world, BlockPos pos, EntityPlayer player, EnumFacing side, float hitX, float hitY, float hitZ, boolean invertShift) {
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("IExtendedBlockClickHandler.onBlockClicked");
+
+        if (!player.capabilities.isCreativeMode) {
+            PlayerInteractEvent.LeftClickBlock event = new PlayerInteractEvent.LeftClickBlock(player, pos, side, new Vec3d(hitX, hitY, hitZ));
+            MinecraftForge.EVENT_BUS.post(event);
+            if (event.isCanceled())
+                return;
+        }
+        TileEntityDrawers tileDrawers = getTileEntitySafe(world, pos);
+        if (tileDrawers.getDirection() != side.ordinal())
+            return;
+
+        if (tileDrawers.isSealed())
+            return;
+
+        if (!SecurityManager.hasAccess(player.getGameProfile(), tileDrawers))
+            return;
+
+        int slot = getDrawerSlot(getDrawerCount(world.getBlockState(pos)), side.ordinal(), hitX, hitY, hitZ);
+        IDrawer drawer = tileDrawers.getDrawer(slot);
+
+        ItemStack item;
+        
+        ItemStack held = player.inventory.getCurrentItem();
+        IItemHandler handler = held==null?null:held.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+        if (handler instanceof IBitBag) {
+            IBitBag bag = (IBitBag) handler; 
+            drawer = tileDrawers.getDrawer(1);
+            if (drawer.getStoredItemPrototype() == null)
+                return;
+            int retrieved = 0;
+            if (player.isSneaking() != invertShift) {
+                for (int i = 0; i < bag.getSlots(); i++) {
+                    ItemStack test = bag.getStackInSlot(i);
+                    if (test == null || (test.stackSize < bag.getBitbagStackSize() && drawer.canItemBeExtracted(test))) {
+                        int local = fillBagSlot(bag, i, drawer, tileDrawers);
+                        if (local == 0)
+                            break;
+                        retrieved += local;
+                    }
+                }
+            } else {
+                int addSlot = -1;
+                for (int i = 0; i < bag.getSlots(); i++) {
+                    ItemStack test = bag.getStackInSlot(i);
+                    if (test == null) {
+                        if (addSlot == -1)
+                            addSlot = i;
+                        continue;
+                    }
+                    if (test.stackSize < bag.getBitbagStackSize() && drawer.canItemBeExtracted(test)) {
+                        addSlot = i;
+                        break;
+                    }
+                }
+                if (addSlot >= 0) {
+                    retrieved = fillBagSlot(bag, addSlot, drawer, tileDrawers);
+                }
+            }
+            if (retrieved > 0 && !world.isRemote)
+                world.playSound(null, pos.getX() + .5f, pos.getY() + .5f, pos.getZ() + .5f, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, .2f, ((world.rand.nextFloat() - world.rand.nextFloat()) * .7f + 1) * 2);
+        } else {
+            if (player.isSneaking() != invertShift)
+                item = tileDrawers.takeItemsFromSlot(slot, drawer.getStoredItemStackSize());
+            else
+                item = tileDrawers.takeItemsFromSlot(slot, 1);
+
+            if (BitDrawers.config.debugTrace)
+                BDLogger.info((item == null) ? "  null item" : "  " + item.toString());
+
+            IBlockState state = world.getBlockState(pos);
+            if (item != null && item.stackSize > 0) {
+                if (!player.inventory.addItemStackToInventory(item)) {
+                    dropItemStack(world, pos.offset(side), player, item);
+                    world.notifyBlockUpdate(pos, state, state, 3);
+                }
+                else if (!world.isRemote)
+                    world.playSound(null, pos.getX() + .5f, pos.getY() + .5f, pos.getZ() + .5f, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, .2f, ((world.rand.nextFloat() - world.rand.nextFloat()) * .7f + 1) * 2);
+            }
+        }
+        
+    }
+
+    protected void dropItemStack (World world, BlockPos pos, EntityPlayer player, ItemStack stack) {
+        EntityItem entity = new EntityItem(world, pos.getX() + .5f, pos.getY() + .1f, pos.getZ() + .5f, stack);
+        entity.addVelocity(-entity.motionX, -entity.motionY, -entity.motionZ);
+        world.spawnEntityInWorld(entity);
+    }
+    
+    protected int fillBagSlot(IBitBag bag, int slot, IDrawer drawer, TileEntityDrawers tileDrawers) {
+        int toAdd = bag.getBitbagStackSize();
+        ItemStack item = bag.getStackInSlot(slot);
+        if (item != null)
+            toAdd -= item.stackSize;
+        item = drawer.getStoredItemPrototype().copy();
+        item.stackSize = toAdd;
+        ItemStack test = bag.insertItem(slot, item.copy(), true);
+        if (test != null) {
+            toAdd -= test.stackSize;
+        }
+        if (toAdd == 0)
+            return 0;
+        int retrieved = 0;
+        while (true) {
+            ItemStack temp = tileDrawers.takeItemsFromSlot(1, toAdd);
+            if (temp == null || temp.stackSize == 0)
+                break;
+            retrieved += temp.stackSize;
+            toAdd -= temp.stackSize;
+            if (toAdd == 0)
+                break;
+        }
+        if (retrieved == 0)
+            return 0;
+        item.stackSize = retrieved;
+        test = bag.insertItem(slot, item, false);
+        if (test != null) {
+            if (test.stackSize != 0) {
+                BDLogger.error("Could not insert simulated bit amount into bag. Something went very wrong.");
+            }
+        }
+        
+        return retrieved;
+    }
 
 }

@@ -8,6 +8,7 @@ import com.jaquadro.minecraft.storagedrawers.inventory.ContainerDrawersComp;
 import com.jaquadro.minecraft.storagedrawers.network.CountUpdateMessage;
 import com.jaquadro.minecraft.storagedrawers.storage.BaseDrawerData;
 import com.jaquadro.minecraft.storagedrawers.storage.ICentralInventory;
+import mod.chiselsandbits.api.IBitBag;
 import mod.chiselsandbits.api.ItemType;
 import mods.belgabor.bitdrawers.BitDrawers;
 import mods.belgabor.bitdrawers.core.BDLogger;
@@ -21,8 +22,11 @@ import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumFacing;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
+import net.minecraftforge.items.CapabilityItemHandler;
+import net.minecraftforge.items.IItemHandler;
 
 /**
  * Created by Belgabor on 02.06.2016.
@@ -86,7 +90,43 @@ public class TileBitDrawers extends TileEntityDrawers
 
         return super.isDrawerEnabled(slot);
     }
-
+    
+    @Override
+    public int interactPutItemsIntoSlot (int slot, EntityPlayer player) {
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("TileBitDrawers:interactPutItemsIntoSlot %d", slot);
+        ItemStack stack = player.inventory.getCurrentItem();
+        if (stack != null && stack.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
+            return interactPutBagIntoSlot(slot, stack);
+        }
+        return super.interactPutItemsIntoSlot(slot, player);
+    }
+    
+    public int interactPutBagIntoSlot(int slot, ItemStack stack) {
+        int added = 0;
+        IItemHandler handler = stack.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+        if (handler instanceof IBitBag)
+            slot = 1;
+        for(int i = 0; i < handler.getSlots(); i++) {
+            while (true) {
+                ItemStack extract = handler.extractItem(i, 64, true);
+                if (extract == null)
+                    break;
+                int extracted = extract.stackSize;
+                int inserted = putItemsIntoSlot(slot, extract, extracted);
+                if (inserted > 0) {
+                    added += inserted;
+                    ItemStack test = handler.extractItem(i, inserted, false);
+                    if (test.stackSize < inserted)
+                        BDLogger.error("Could not extract simulated amount from bag. Something went very wrong.");
+                }
+                if (inserted < extracted)
+                    break;
+            }
+        }
+        return added;
+    }
+    
     @Override
     public int putItemsIntoSlot (int slot, ItemStack stack, int count) {
         if (BitDrawers.config.debugTrace)

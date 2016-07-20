@@ -12,10 +12,13 @@ import mods.belgabor.bitdrawers.core.BDLogger;
 import mods.belgabor.bitdrawers.core.BlockRegistry;
 import mods.belgabor.bitdrawers.core.CommonProxy;
 import mods.belgabor.bitdrawers.core.RecipeRegistry;
+import mods.belgabor.bitdrawers.event.PlayerEventHandler;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
@@ -59,6 +62,11 @@ public class BitDrawers implements IChiselsAndBitsAddon
         else {
             network.registerMessage(CountUpdateMessage.HandlerStub.class, CountUpdateMessage.class, 1, Side.CLIENT);
         }
+    }
+    
+    @EventHandler
+    public void init(FMLInitializationEvent event) {
+        MinecraftForge.EVENT_BUS.register(new PlayerEventHandler());
     }
     
     @EventHandler
