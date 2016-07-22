@@ -95,17 +95,29 @@ public class TileBitDrawers extends TileEntityDrawers
         if (BitDrawers.config.debugTrace)
             BDLogger.info("TileBitDrawers:interactPutItemsIntoSlot %d", slot);
         ItemStack stack = player.inventory.getCurrentItem();
-        if (stack != null && stack.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
-            return interactPutBagIntoSlot(slot, stack);
+        if (stack != null) {
+            if (stack.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
+                return interactPutBagIntoSlot(slot, stack);
+            } else if (slot == 2){
+                ItemType type = BitDrawers.cnb_api.getItemType(stack);
+                if (type == ItemType.POSITIVE_DESIGN || type == ItemType.NEGATIVE_DESIGN || type == ItemType.MIRROR_DESIGN) {
+                    return interactSetCustomSlot(stack);
+                }
+            }
         }
         return super.interactPutItemsIntoSlot(slot, player);
     }
     
     public int interactPutBagIntoSlot(int slot, ItemStack stack) {
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("TileBitDrawers:interactPutBagIntoSlot %d %s", slot, stack==null?"null":stack.getDisplayName());
         int added = 0;
         IItemHandler handler = stack.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
-        if (handler instanceof IBitBag)
+        if (handler instanceof IBitBag) {
             slot = 1;
+            if (BitDrawers.config.debugTrace)
+                BDLogger.info("TileBitDrawers:interactPutBagIntoSlot Bit Bag detected");
+        }
         for(int i = 0; i < handler.getSlots(); i++) {
             while (true) {
                 ItemStack extract = handler.extractItem(i, 64, true);
@@ -124,6 +136,26 @@ public class TileBitDrawers extends TileEntityDrawers
             }
         }
         return added;
+    }
+    
+    public int interactSetCustomSlot(ItemStack stack) {
+        ItemStack bit = getDrawer(1).getStoredItemPrototype();
+        if (bit == null)
+            return 0;
+
+        IBitBrush brush;
+        try {
+            brush = BitDrawers.cnb_api.createBrush(bit);
+        } catch (APIExceptions.InvalidBitItem e) {
+            return 0;
+        }
+        ItemStack item = BitHelper.getMonochrome(stack, brush);
+        if (item == null || item.stackSize == 0)
+            populateSlot(2, null, 0);
+        else
+            populateSlot(2, item, item.stackSize);
+        
+        return 1;
     }
     
     @Override
@@ -272,7 +304,7 @@ public class TileBitDrawers extends TileEntityDrawers
     
     private void populateSlot (int slot, ItemStack stack, int conversion) {
         convRate[slot] = conversion;
-        protoStack[slot] = stack.copy();
+        protoStack[slot] = stack==null?null:stack.copy();
         //centralInventory.setStoredItem(slot, stack, 0);
         //getDrawer(slot).setStoredItem(stack, 0);
     }

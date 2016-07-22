@@ -267,42 +267,30 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
                 world.playSound(null, pos.getX() + .5f, pos.getY() + .5f, pos.getZ() + .5f, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, .2f, ((world.rand.nextFloat() - world.rand.nextFloat()) * .7f + 1) * 2);
             item = null;
         } else if (slot == 1 && heldType != null && heldType.isBitAccess) {
-            boolean set = heldType == ItemType.NEGATIVE_DESIGN;
             ItemStack bit = drawer.getStoredItemPrototype();
-            Block material = null;
-            if (tileDrawers.getDrawer(0).getStoredItemPrototype().getItem() instanceof ItemBlock)
-                material = ((ItemBlock) tileDrawers.getDrawer(0).getStoredItemPrototype().getItem()).getBlock();
-            if (bit == null || material == null)
+            if (bit == null)
                 return;
+
             IBitBrush brush;
-            BitHelper.BitCopy visitor;
             try {
                 brush = BitDrawers.cnb_api.createBrush(bit);
-                visitor = new BitHelper.BitCopy(BitDrawers.cnb_api.createBitItem(held), brush, set);
             } catch (APIExceptions.InvalidBitItem e) {
                 return;
             }
-            //item = new ItemStack(ChiselsAndBits.getBlocks().getConversion(material.getDefaultState()), 1);
-            IBitAccess resultAccessor = BitDrawers.cnb_api.createBitItem(null);
-            resultAccessor.visitBits(visitor);
-            if (visitor.count == 0)
+            item = BitHelper.getMonochrome(held, brush);
+            if (item == null)
                 return;
-            NBTTagCompound tag = held.getTagCompound();
-            EnumFacing facing = null;
-            if (tag != null && tag.hasKey(ItemBlockChiseled.NBT_SIDE)) {
-                int f = Math.max(0, Math.min(5, tag.getByte(ItemBlockChiseled.NBT_SIDE)));
-                facing = EnumFacing.VALUES[f];
-            }
-            item = resultAccessor.getBitsAsItem(facing, ItemType.CHISLED_BLOCK, false);
+            int bitCount = item.stackSize;
+            
             if (player.isSneaking() != invertShift)
                 item.stackSize = 64;
             else
                 item.stackSize = 1;
-            item.stackSize = Math.min(item.stackSize, drawer.getStoredItemCount() / visitor.count);
+            item.stackSize = Math.min(item.stackSize, drawer.getStoredItemCount() / bitCount);
             if (item.stackSize == 0)
                 return;
             
-            drawer.setStoredItemCount(drawer.getStoredItemCount() - (item.stackSize * visitor.count));
+            drawer.setStoredItemCount(drawer.getStoredItemCount() - (item.stackSize * bitCount));
         } else {
             if (player.isSneaking() != invertShift)
                 item = tileDrawers.takeItemsFromSlot(slot, drawer.getStoredItemStackSize());

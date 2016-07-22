@@ -31,7 +31,7 @@ public class BitDrawers implements IChiselsAndBitsAddon
 {
     public static final String MODNAME = "Drawers & Bits";
     public static final String MODID = "bitdrawers";
-    public static final String VERSION = "0.1";
+    public static final String VERSION = "0.2";
     
     @SidedProxy(
             clientSide = "mods.belgabor.bitdrawers.client.ClientProxy",

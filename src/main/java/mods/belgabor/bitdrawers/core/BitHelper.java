@@ -1,11 +1,14 @@
 package mods.belgabor.bitdrawers.core;
 
 import mod.chiselsandbits.api.*;
+import mod.chiselsandbits.chiseledblock.ItemBlockChiseled;
 import mods.belgabor.bitdrawers.BitDrawers;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumFacing;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,6 +52,30 @@ public class BitHelper {
             }
         }
         return null;
+    }
+    
+    public static ItemStack getMonochrome(ItemStack source, IBitBrush brush) {
+        boolean set = BitDrawers.cnb_api.getItemType(source) == ItemType.NEGATIVE_DESIGN;
+        BitHelper.BitCopy visitor;
+        try {
+            visitor = new BitHelper.BitCopy(BitDrawers.cnb_api.createBitItem(source), brush, set);
+        } catch (APIExceptions.InvalidBitItem e) {
+            return null;
+        }
+        //item = new ItemStack(ChiselsAndBits.getBlocks().getConversion(material.getDefaultState()), 1);
+        IBitAccess resultAccessor = BitDrawers.cnb_api.createBitItem(null);
+        resultAccessor.visitBits(visitor);
+        if (visitor.count == 0)
+            return null;
+        NBTTagCompound tag = source.getTagCompound();
+        EnumFacing facing = null;
+        if (tag != null && tag.hasKey(ItemBlockChiseled.NBT_SIDE)) {
+            int f = Math.max(0, Math.min(5, tag.getByte(ItemBlockChiseled.NBT_SIDE)));
+            facing = EnumFacing.VALUES[f];
+        }
+        ItemStack item = resultAccessor.getBitsAsItem(facing, ItemType.CHISLED_BLOCK, false);
+        item.stackSize = visitor.count;
+        return item;
     }
 
     public static class BitCopy implements IBitVisitor {

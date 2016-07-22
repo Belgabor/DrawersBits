@@ -15,6 +15,13 @@ public class BDLogger {
         else
             System.out.println(String.format(message, args));
     }
+    
+    public static void log(Level level, Throwable t) {
+        if (logger != null)
+            logger.catching(level, t);
+        else
+            t.printStackTrace();
+    }
 
     public static void info(String message, Object ... args) {
         log(Level.INFO, message, args);
@@ -25,7 +32,7 @@ public class BDLogger {
     }
     
     public static void error(Throwable t) {
-        logger.catching(Level.ERROR, t);
+        log(Level.ERROR, t);
     }
 
 }
