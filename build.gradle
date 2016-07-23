@@ -91,3 +91,7 @@ processResources
         exclude 'mcmod.info'
     }
 }
+
+task curseReadme(type:Exec) {
+    commandLine 'cmd', '/c', 'pandoc', 'README.md', '-o', 'README.html'
+}
