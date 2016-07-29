@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "facing=north": { "model": "bitdrawers:bitcontroller" },
+        "facing=south": { "model": "bitdrawers:bitcontroller", "y": 180 },
+        "facing=west": { "model": "bitdrawers:bitcontroller", "y": 270 },
+        "facing=east": { "model": "bitdrawers:bitcontroller", "y": 90 }
+    }
+}

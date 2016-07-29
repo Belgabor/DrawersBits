@@ -1,5 +1,8 @@
 # Changelog
 
+## Version ?
+* [NEW] Bit Drawer Controller
+
 ## Version 0.2
 * [NEW] Bag interaction
 * [NEW] Design interaction, custom slot

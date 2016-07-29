@@ -1,3 +1,4 @@
+tile.bitcontroller.name=Bit Drawer Controller
 tile.bitdrawer.name=Bit Drawer
 bitDrawers.container.bitDrawers=Bit Drawer
 bitDrawers.config.prop.enableDebugLogging=Enable Debug Logging

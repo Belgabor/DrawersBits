@@ -3,9 +3,12 @@ package mods.belgabor.bitdrawers.core;
 import com.jaquadro.minecraft.chameleon.Chameleon;
 import com.jaquadro.minecraft.chameleon.resources.ModelRegistry;
 import com.jaquadro.minecraft.storagedrawers.client.renderer.TileEntityDrawersRenderer;
+import mods.belgabor.bitdrawers.block.BlockBitController;
 import mods.belgabor.bitdrawers.block.BlockBitDrawers;
+import mods.belgabor.bitdrawers.block.tile.TileBitController;
 import mods.belgabor.bitdrawers.block.tile.TileBitDrawers;
 import mods.belgabor.bitdrawers.client.model.BitDrawerModel;
+import mods.belgabor.bitdrawers.item.ItemBitController;
 import mods.belgabor.bitdrawers.item.ItemBitDrawer;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.registry.GameRegistry;
@@ -17,12 +20,17 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  */
 public class BlockRegistry {
     public static BlockBitDrawers bitDrawer;
+    public static BlockBitController bitController;
     
     public void init() {
         bitDrawer = new BlockBitDrawers("bitdrawer");
         GameRegistry.register(bitDrawer);
         GameRegistry.register((new ItemBitDrawer(bitDrawer)).setRegistryName(bitDrawer.getRegistryName()));
         GameRegistry.registerTileEntity(TileBitDrawers.class, bitDrawer.getRegistryName().toString());
+        bitController = new BlockBitController("bitcontroller");
+        GameRegistry.register(bitController);
+        GameRegistry.register((new ItemBitController(bitController)).setRegistryName(bitController.getRegistryName()));
+        GameRegistry.registerTileEntity(TileBitController.class, bitController.getRegistryName().toString());
     }
 
     @SideOnly(Side.CLIENT)
@@ -32,5 +40,6 @@ public class BlockRegistry {
         ModelRegistry modelRegistry = Chameleon.instance.modelRegistry;
 
         modelRegistry.registerModel(new BitDrawerModel.Register());
+        modelRegistry.registerItemVariants(bitController);
     }
 }
