@@ -1,26 +1,16 @@
 package mods.belgabor.bitdrawers.block;
 
 import com.jaquadro.minecraft.storagedrawers.StorageDrawers;
-import com.jaquadro.minecraft.storagedrawers.api.storage.IDrawer;
-import com.jaquadro.minecraft.storagedrawers.api.storage.IDrawerGroup;
-import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.IProtectable;
-import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.IVoidable;
 import com.jaquadro.minecraft.storagedrawers.block.BlockController;
 import com.jaquadro.minecraft.storagedrawers.block.IBlockDestroyHandler;
 import com.jaquadro.minecraft.storagedrawers.block.IExtendedBlockClickHandler;
-import com.jaquadro.minecraft.storagedrawers.block.tile.TileEntityController;
-import com.jaquadro.minecraft.storagedrawers.block.tile.TileEntityDrawers;
 import com.jaquadro.minecraft.storagedrawers.network.BlockClickMessage;
 import com.jaquadro.minecraft.storagedrawers.network.BlockDestroyMessage;
-import com.jaquadro.minecraft.storagedrawers.security.SecurityManager;
-import mod.chiselsandbits.api.APIExceptions;
 import mod.chiselsandbits.api.IBitBag;
-import mod.chiselsandbits.api.IBitBrush;
 import mod.chiselsandbits.api.ItemType;
 import mods.belgabor.bitdrawers.BitDrawers;
 import mods.belgabor.bitdrawers.block.tile.TileBitController;
 import mods.belgabor.bitdrawers.core.BDLogger;
-import mods.belgabor.bitdrawers.core.BitHelper;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.item.EntityItem;
@@ -149,41 +139,9 @@ public class BlockBitController extends BlockController implements IExtendedBloc
             if (retrieved > 0 && !world.isRemote)
                 world.playSound(null, pos.getX() + .5f, pos.getY() + .5f, pos.getZ() + .5f, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, .2f, ((world.rand.nextFloat() - world.rand.nextFloat()) * .7f + 1) * 2);
             item = null;
-        } /* else if (slot == 1 && heldType != null && heldType.isBitAccess) {
-            ItemStack bit = drawer.getStoredItemPrototype();
-            if (bit == null)
-                return;
-
-            IBitBrush brush;
-            try {
-                brush = BitDrawers.cnb_api.createBrush(bit);
-            } catch (APIExceptions.InvalidBitItem e) {
-                return;
-            }
-            item = BitHelper.getMonochrome(held, brush);
-            if (item == null)
-                return;
-            int bitCount = item.stackSize;
-
-            if (player.isSneaking() != invertShift)
-                item.stackSize = 64;
-            else
-                item.stackSize = 1;
-            item.stackSize = Math.min(item.stackSize, drawer.getStoredItemCount() / bitCount);
-            if (item.stackSize == 0)
-                return;
-
-            drawer.setStoredItemCount(drawer.getStoredItemCount() - (item.stackSize * bitCount));
-        } else {
-            if (player.isSneaking() != invertShift)
-                item = tileDrawers.takeItemsFromSlot(slot, drawer.getStoredItemStackSize());
-            else
-                item = tileDrawers.takeItemsFromSlot(slot, 1);
-
-            if (BitDrawers.config.debugTrace)
-                BDLogger.info((item == null) ? "  null item" : "  " + item.toString());
-
-        } */
+        } else if (heldType != null && heldType.isBitAccess && heldType != ItemType.NEGATIVE_DESIGN) {
+            item = tileDrawers.retrieveByPattern(held, player, player.isSneaking() != invertShift);
+        }
         IBlockState state = world.getBlockState(pos);
         if (item != null && item.stackSize > 0) {
             if (!player.inventory.addItemStackToInventory(item)) {

@@ -16,6 +16,7 @@ public class ConfigManager {
     public int bitdrawerStorage = 16;
     public boolean allowBagMultiInsertion = true;
     public boolean allowChiseledBlockMultiInsertion = true;
+    public boolean chatty = true;
     
     public ConfigManager(File config) {
         this.config = new Configuration(config);
@@ -38,6 +39,10 @@ public class ConfigManager {
         allowChiseledBlockMultiInsertion = config.get(Configuration.CATEGORY_GENERAL, "allowChiseledBlockMultiInsertion", true,
                 "If set all Chisels & Bits blocks in a players inventory will try to be inserted on a double right-click on the bit drawer controller.")
                 .setLanguageKey(LANG_PREFIX + "prop.allowChiseledBlockMultiInsertion").getBoolean();
+
+        chatty = config.get(Configuration.CATEGORY_GENERAL, "chatty", true,
+                "If set the player will be informed in chat if something didn't work (if possible).")
+                .setLanguageKey(LANG_PREFIX + "prop.chatty").getBoolean();
 
         if (config.hasChanged())
             config.save();

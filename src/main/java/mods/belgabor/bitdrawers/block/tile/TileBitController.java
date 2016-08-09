@@ -9,12 +9,14 @@ import com.jaquadro.minecraft.storagedrawers.security.SecurityManager;
 import com.jaquadro.minecraft.storagedrawers.util.ItemMetaListRegistry;
 import com.mojang.authlib.GameProfile;
 import mod.chiselsandbits.api.*;
+import mod.chiselsandbits.core.api.BitAccess;
 import mod.chiselsandbits.core.api.BitBrush;
 import mods.belgabor.bitdrawers.BitDrawers;
 import mods.belgabor.bitdrawers.core.BDLogger;
 import mods.belgabor.bitdrawers.core.BitHelper;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
@@ -238,6 +240,16 @@ public class TileBitController extends TileEntityController {
         }
     }
     
+    protected IDrawer getAccessibleBitDrawer(SlotRecord slotRecord, GameProfile profile) {
+        if (slotRecord == null)
+            return null;
+        IDrawerGroup group = this.getGroupForCoord(slotRecord.coord);
+        if (!(group instanceof IProtectable) || SecurityManager.hasAccess(profile, (IProtectable) group)) {
+            return group.getDrawer(slotRecord.slot);
+        }
+        return null;
+    }
+    
     public int fillBag(IBitBag bag, GameProfile profile) {
         final Integer result[] = new Integer[1];
         result[0] = 0;
@@ -267,11 +279,9 @@ public class TileBitController extends TileEntityController {
                 if (addSlot > -1) {
                     slotList.stream().forEachOrdered(slotRecord -> {
                         System.out.println(slotRecord.slot);
-                        IDrawerGroup group = this.getGroupForCoord(slotRecord.coord);
-                        if (!(group instanceof IProtectable) || SecurityManager.hasAccess(profile, (IProtectable) group)) {
-                            IDrawer drawer = group.getDrawer(slotRecord.slot);
+                        IDrawer drawer = getAccessibleBitDrawer(slotRecord, profile);
+                        if (drawer != null)
                             result[0] += fillBagSlot(bag, doAddSlot, drawer);
-                        }
                     });
                 }
             } catch (APIExceptions.InvalidBitItem invalidBitItem) {}
@@ -310,6 +320,75 @@ public class TileBitController extends TileEntityController {
         }
 
         return toAdd;
+    }
+    
+    public ItemStack retrieveByPattern(ItemStack pattern, EntityPlayer player, boolean getStack) {
+        IBitAccess source = BitDrawers.cnb_api.createBitItem(pattern);
+        GameProfile profile = player.getGameProfile();
+        
+        if (source == null)
+            return null;
+        
+        BitHelper.BitCounter counter = new BitHelper.BitCounter();
+        source.visitBits(counter);
+        
+        Map<Integer, Integer> available = new HashMap<>();
+        counter.counts.forEach((blockStateID, count) -> {
+            available.put(blockStateID, 0);
+            List<SlotRecord> records = drawerBitLookup.get(blockStateID);
+            if (records == null)
+                return;
+            records.stream().forEachOrdered(slotRecord -> {
+                IDrawer drawer = getAccessibleBitDrawer(slotRecord, profile);
+                if (drawer != null) {
+                    available.put(blockStateID, available.get(blockStateID) + drawer.getStoredItemCount());
+                }
+            });
+        });
+        
+        Integer[] max = new Integer[1];
+        max[0] = Integer.MAX_VALUE;
+        available.forEach((blockStateID, count) -> {
+            int m = count / counter.counts.get(blockStateID);
+            if (m == 0 && BitDrawers.config.chatty) {
+                ItemStack desc = (new BitBrush(blockStateID)).getItemStack(1);
+                player.addChatComponentMessage(new TextComponentTranslation("chat.notEnough", desc==null?"Unknown":desc.getDisplayName()));
+            }
+            max[0] = Math.min(max[0], m);
+        });
+        
+        int toExtract = Math.min(max[0], getStack?64:1);
+        if (toExtract == 0)
+            return null;
+
+        ItemStack stack = source.getBitsAsItem(BitHelper.getBitsFacing(pattern), ItemType.CHISLED_BLOCK, false);
+        stack.stackSize = toExtract;
+        Integer[] temp = new Integer[1];
+
+        counter.counts.forEach((blockStateID, count) -> {
+            temp[0] = count * toExtract;
+            List<SlotRecord> records = drawerBitLookup.get(blockStateID);
+            if (records == null) {
+                stack.stackSize = 0;
+                return;
+            }
+            records.stream().forEachOrdered(slotRecord -> {
+                IDrawer drawer = getAccessibleBitDrawer(slotRecord, profile);
+                if (drawer != null) {
+                    int ex = Math.min(temp[0], drawer.getStoredItemCount());
+                    drawer.setStoredItemCount(drawer.getStoredItemCount() - ex);
+                    temp[0] -= ex;
+                }
+            });
+            if (temp[0] > 0)
+                stack.stackSize = 0;
+        });
+        
+        if (stack.stackSize == 0) {
+            BDLogger.error("Could not extract simulated bit for block. Something went very wrong.");
+            return null;
+        }
+        return stack;
     }
 
     protected static class BitCollectorData {
