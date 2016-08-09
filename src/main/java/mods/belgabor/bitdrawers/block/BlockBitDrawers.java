@@ -191,13 +191,7 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
         if (BitDrawers.config.debugTrace)
             BDLogger.info("BlockBitDrawers:onBlockClicked %f %f %f", hitX, hitY, hitZ);
 
-        ((WorldServer)world).addScheduledTask(new Runnable()
-        {
-            @Override
-            public void run () {
-                BlockBitDrawers.this.onBlockClickedAsync(world, pos, player, side, hitX, hitY, hitZ, invertShift);
-            }
-        });
+        ((WorldServer)world).addScheduledTask(() -> BlockBitDrawers.this.onBlockClickedAsync(world, pos, player, side, hitX, hitY, hitZ, invertShift));
     }
 
     protected void onBlockClickedAsync (World world, BlockPos pos, EntityPlayer player, EnumFacing side, float hitX, float hitY, float hitZ, boolean invertShift) {

@@ -3,6 +3,7 @@ package mods.belgabor.bitdrawers;
 /**
  * Created by Belgabor on 02.06.2016.
  */
+import com.jaquadro.minecraft.storagedrawers.network.BlockClickMessage;
 import com.jaquadro.minecraft.storagedrawers.network.CountUpdateMessage;
 import mod.chiselsandbits.api.ChiselsAndBitsAddon;
 import mod.chiselsandbits.api.IChiselAndBitsAPI;
@@ -55,6 +56,7 @@ public class BitDrawers implements IChiselsAndBitsAddon
         network = NetworkRegistry.INSTANCE.newSimpleChannel(MODID);
         blocks.init();
         proxy.initClient();
+        network.registerMessage(BlockClickMessage.Handler.class, BlockClickMessage.class, 0, Side.SERVER);
         
         if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
             network.registerMessage(CountUpdateMessage.Handler.class, CountUpdateMessage.class, 1, Side.CLIENT);

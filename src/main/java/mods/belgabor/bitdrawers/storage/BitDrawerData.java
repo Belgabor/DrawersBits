@@ -58,7 +58,7 @@ public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, 
     @Override
     public boolean areItemsEqual(ItemStack item) {
         ItemStack protoStack = this.getStoredItemPrototype();
-        return ItemStack.areItemsEqual(item, protoStack) && ItemStack.areItemStackTagsEqual(item, protoStack);
+        return BitHelper.areItemsEqual(item, protoStack);
     }
 
     @Override

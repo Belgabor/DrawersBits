@@ -6,11 +6,9 @@ import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.IProtectable;
 import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.IVoidable;
 import com.jaquadro.minecraft.storagedrawers.block.tile.TileEntityController;
 import com.jaquadro.minecraft.storagedrawers.security.SecurityManager;
+import com.jaquadro.minecraft.storagedrawers.util.ItemMetaListRegistry;
 import com.mojang.authlib.GameProfile;
-import mod.chiselsandbits.api.APIExceptions;
-import mod.chiselsandbits.api.IBitAccess;
-import mod.chiselsandbits.api.IBitBrush;
-import mod.chiselsandbits.api.ItemType;
+import mod.chiselsandbits.api.*;
 import mod.chiselsandbits.core.api.BitBrush;
 import mods.belgabor.bitdrawers.BitDrawers;
 import mods.belgabor.bitdrawers.core.BDLogger;
@@ -20,14 +18,13 @@ import net.minecraft.item.ItemStack;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.OptionalInt;
+import java.util.*;
 
 /**
  * Created by Belgabor on 24.07.2016.
  */
 public class TileBitController extends TileEntityController {
+    protected Map<Integer, List<SlotRecord>> drawerBitLookup = new HashMap<>();
     
     @Override
     public int interactPutItemsIntoInventory (EntityPlayer player) {
@@ -193,7 +190,128 @@ public class TileBitController extends TileEntityController {
             return -1;
         }
     }
+
+    @Override
+    protected void resetCache() {
+        drawerBitLookup.clear();
+        super.resetCache();
+    }
+
+    @Override
+    public void updateCache() {
+        super.updateCache();
+        rebuildBitLookup(drawerBitLookup, drawerSlotList);
+    }
     
+    protected void rebuildBitLookup (Map<Integer, List<SlotRecord>> lookup, List<SlotRecord> records) {
+        lookup.clear();
+        boolean invBased = false;
+
+        for (int i = 0; i < records.size(); i++) {
+            SlotRecord record = records.get(i);
+            IDrawerGroup group = getGroupForCoord(record.coord);
+            if (group == null)
+                continue;
+
+            int drawerSlot = (invBased) ? group.getDrawerInventory().getDrawerSlot(record.slot) : record.slot;
+            if (!group.isDrawerEnabled(drawerSlot))
+                continue;
+
+            IDrawer drawer = group.getDrawer(drawerSlot);
+            if (drawer.isEmpty())
+                continue;
+
+            ItemStack item = drawer.getStoredItemPrototype();
+            if (BitDrawers.cnb_api.getItemType(item) == ItemType.CHISLED_BIT) {
+                if (BitDrawers.config.debugTrace)
+                    BDLogger.info("Rebuilding: %s %d %d", item.getDisplayName(), record.slot, i);
+                try {
+                    IBitBrush brush = BitDrawers.cnb_api.createBrush(item);
+                    List<SlotRecord> slotRecords = lookup.get(brush.getStateID());
+                    if (slotRecords == null) {
+                        slotRecords = new ArrayList<>();
+                        lookup.put(brush.getStateID(), slotRecords);
+                    }
+                    slotRecords.add(record);
+                } catch (APIExceptions.InvalidBitItem invalidBitItem) {}
+            }
+        }
+    }
+    
+    public int fillBag(IBitBag bag, GameProfile profile) {
+        final Integer result[] = new Integer[1];
+        result[0] = 0;
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("TileBitController.fillBag");
+        
+        drawerBitLookup.forEach((blockStateID, slotList) -> {
+            System.out.println(blockStateID);
+            try {
+                ItemStack bit = BitDrawers.cnb_api.getBitItem(new BitBrush(blockStateID).getState());
+                System.out.println(bit.getDisplayName());
+                int addSlot = -1;
+                for (int i = 0; i < bag.getSlots(); i++) {
+                    ItemStack test = bag.getStackInSlot(i);
+                    if (test == null) {
+                        if (addSlot == -1)
+                            addSlot = i;
+                        continue;
+                    }
+                    if (test.stackSize < bag.getBitbagStackSize() && BitHelper.areItemsEqual(test, bit)) {
+                        addSlot = i;
+                        break;
+                    }
+                }
+                final int doAddSlot = addSlot;
+                
+                if (addSlot > -1) {
+                    slotList.stream().forEachOrdered(slotRecord -> {
+                        System.out.println(slotRecord.slot);
+                        IDrawerGroup group = this.getGroupForCoord(slotRecord.coord);
+                        if (!(group instanceof IProtectable) || SecurityManager.hasAccess(profile, (IProtectable) group)) {
+                            IDrawer drawer = group.getDrawer(slotRecord.slot);
+                            result[0] += fillBagSlot(bag, doAddSlot, drawer);
+                        }
+                    });
+                }
+            } catch (APIExceptions.InvalidBitItem invalidBitItem) {}
+        });
+        
+        return result[0];
+    }
+    
+    protected int fillBagSlot(IBitBag bag, int slot, IDrawer drawer) {
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("TileBitController:fillBagSlot %d %s", slot, drawer.getStoredItemPrototype()==null?"null":drawer.getStoredItemPrototype().getDisplayName());
+        if (drawer.getStoredItemCount() == 0)
+            return 0;
+        
+        int toAdd = bag.getBitbagStackSize();
+        ItemStack item = bag.getStackInSlot(slot);
+        if (item != null)
+            toAdd -= item.stackSize;
+        item = drawer.getStoredItemPrototype().copy();
+        item.stackSize = toAdd;
+        ItemStack test = bag.insertItem(slot, item.copy(), true);
+        if (test != null) {
+            toAdd -= test.stackSize;
+        }
+        if (toAdd == 0)
+            return 0;
+        
+        toAdd = Math.min(toAdd, drawer.getStoredItemCount());
+        drawer.setStoredItemCount(drawer.getStoredItemCount() - toAdd);
+        item.stackSize = toAdd;
+        test = bag.insertItem(slot, item, false);
+        if (test != null) {
+            if (test.stackSize != 0) {
+                BDLogger.error("Could not insert simulated bit amount into bag. Something went very wrong.");
+            }
+        }
+
+        return toAdd;
+    }
+
     protected static class BitCollectorData {
         protected final int count;
         protected final IBitBrush brush;
@@ -240,4 +358,6 @@ public class TileBitController extends TileEntityController {
             return list;
         }
     }
+    
+
 }

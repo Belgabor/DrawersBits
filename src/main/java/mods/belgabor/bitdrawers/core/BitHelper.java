@@ -17,6 +17,10 @@ import java.util.Map;
  * Created by Belgabor on 19.07.2016.
  */
 public class BitHelper {
+    public static boolean areItemsEqual(ItemStack a, ItemStack b) {
+        return ItemStack.areItemsEqual(a, b) && ItemStack.areItemStackTagsEqual(a, b);
+    }
+    
     public static ItemStack getBit(ItemStack stack) {
         if (stack.getItem() instanceof ItemBlock) {
             Block block = ((ItemBlock) stack.getItem()).getBlock();
