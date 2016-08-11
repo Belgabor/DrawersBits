@@ -2,6 +2,7 @@ package mods.belgabor.bitdrawers.core;
 
 import mod.chiselsandbits.api.*;
 import mod.chiselsandbits.chiseledblock.ItemBlockChiseled;
+import mod.chiselsandbits.helpers.ModUtil;
 import mods.belgabor.bitdrawers.BitDrawers;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -58,16 +59,6 @@ public class BitHelper {
         return null;
     }
     
-    public static EnumFacing getBitsFacing(ItemStack stack) {
-        NBTTagCompound tag = stack.getTagCompound();
-        EnumFacing facing = null;
-        if (tag != null && tag.hasKey(ItemBlockChiseled.NBT_SIDE)) {
-            int f = Math.max(0, Math.min(5, tag.getByte(ItemBlockChiseled.NBT_SIDE)));
-            facing = EnumFacing.VALUES[f];
-        }
-        return facing;
-    }
-    
     public static ItemStack getMonochrome(ItemStack source, IBitBrush brush) {
         boolean set = BitDrawers.cnb_api.getItemType(source) == ItemType.NEGATIVE_DESIGN;
         BitHelper.BitCopy visitor;
@@ -81,7 +72,7 @@ public class BitHelper {
         resultAccessor.visitBits(visitor);
         if (visitor.count == 0)
             return null;
-        ItemStack item = resultAccessor.getBitsAsItem(getBitsFacing(source), ItemType.CHISLED_BLOCK, false);
+        ItemStack item = resultAccessor.getBitsAsItem(ModUtil.getSide(source), ItemType.CHISLED_BLOCK, false);
         item.stackSize = visitor.count;
         return item;
     }

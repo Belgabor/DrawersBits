@@ -6,6 +6,7 @@ import com.jaquadro.minecraft.storagedrawers.block.EnumCompDrawer;
 import com.jaquadro.minecraft.storagedrawers.block.tile.TileEntityDrawers;
 import com.mojang.realmsclient.gui.ChatFormatting;
 import mods.belgabor.bitdrawers.BitDrawers;
+import mods.belgabor.bitdrawers.block.tile.TileBitDrawers;
 import mods.belgabor.bitdrawers.config.ConfigManager;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -47,7 +48,7 @@ public class ItemBitDrawer extends ItemBlock implements IItemMeshMapper, IItemVa
         if (!super.placeBlockAt(stack, player, world, pos, side, hitX, hitY, hitZ, newState))
             return false;
 
-        TileEntityDrawers tile = (TileEntityDrawers) world.getTileEntity(pos);
+        TileBitDrawers tile = (TileBitDrawers) world.getTileEntity(pos);
         if (tile != null) {
             if (side != EnumFacing.UP && side != EnumFacing.DOWN)
                 tile.setDirection(side.ordinal());

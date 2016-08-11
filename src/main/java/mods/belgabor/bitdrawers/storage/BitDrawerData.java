@@ -2,7 +2,7 @@ package mods.belgabor.bitdrawers.storage;
 
 import com.jaquadro.minecraft.storagedrawers.api.storage.IDrawer;
 import com.jaquadro.minecraft.storagedrawers.api.storage.IFractionalDrawer;
-import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.ILockable;
+import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.IItemLockable;
 import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.IShroudable;
 import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.IVoidable;
 import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.LockAttribute;
@@ -19,7 +19,7 @@ import net.minecraft.nbt.NBTTagCompound;
  * Created by Belgabor on 02.06.2016.
  * Based on CompDrawerData by jaquadro
  */
-public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, IVoidable, IShroudable, ILockable
+public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, IVoidable, IShroudable, IItemLockable
 {
     private static final ItemStack nullStack = new ItemStack((Item)null);
 
@@ -98,7 +98,7 @@ public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, 
 
     @Override
     public boolean canItemBeStored (ItemStack itemPrototype) {
-        if (getStoredItemPrototype() == null && !isLocked(LockAttribute.LOCK_EMPTY)) {
+        if (getStoredItemPrototype() == null && !isItemLocked(LockAttribute.LOCK_EMPTY)) {
             return BitHelper.getBit(itemPrototype) != null || BitHelper.getBlock(itemPrototype) != null;
         }
 
@@ -162,15 +162,15 @@ public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, 
     }
 
     @Override
-    public boolean isLocked (LockAttribute attr) {
+    public boolean isItemLocked (LockAttribute attr) {
         return central.isLocked(slot, attr);
     }
 
     @Override
-    public boolean canLock (LockAttribute attr) {
+    public boolean canItemLock (LockAttribute attr) {
         return false;
     }
 
     @Override
-    public void setLocked (LockAttribute attr, boolean isLocked) { }
+    public void setItemLocked (LockAttribute attr, boolean isLocked) { }
 }
