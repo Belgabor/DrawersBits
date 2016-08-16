@@ -308,6 +308,10 @@ public class TileBitDrawers extends TileEntityDrawers
         protoStack[slot] = stack==null?null:stack.copy();
         //centralInventory.setStoredItem(slot, stack, 0);
         //getDrawer(slot).setStoredItem(stack, 0);
+        if (worldObj != null && !worldObj.isRemote) {
+            IBlockState state = worldObj.getBlockState(getPos());
+            worldObj.notifyBlockUpdate(getPos(), state, state, 3);
+        }
     }
     
     private class BitCentralInventory implements ICentralInventory

@@ -1,7 +1,9 @@
 # Changelog
 
-## Version ?
+## Version 0.3
 * [NEW] Bit Drawer Controller
+* [FIXED] Compatibility with Storage Drawers 3.2.4
+* [FIXED] Removed interaction workaround that now caused issues
 
 ## Version 0.21
 * Due to intimate dependencies on Chisels & Bits and Storage Drawers I can no longer keep backwards compatibility 

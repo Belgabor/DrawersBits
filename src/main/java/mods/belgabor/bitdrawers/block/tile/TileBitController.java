@@ -258,10 +258,8 @@ public class TileBitController extends TileEntityController {
             BDLogger.info("TileBitController.fillBag");
         
         drawerBitLookup.forEach((blockStateID, slotList) -> {
-            System.out.println(blockStateID);
             try {
                 ItemStack bit = BitDrawers.cnb_api.getBitItem(new BitBrush(blockStateID).getState());
-                System.out.println(bit.getDisplayName());
                 int addSlot = -1;
                 for (int i = 0; i < bag.getSlots(); i++) {
                     ItemStack test = bag.getStackInSlot(i);
@@ -279,7 +277,6 @@ public class TileBitController extends TileEntityController {
                 
                 if (addSlot > -1) {
                     slotList.stream().forEachOrdered(slotRecord -> {
-                        System.out.println(slotRecord.slot);
                         IDrawer drawer = getAccessibleBitDrawer(slotRecord, profile);
                         if (drawer != null)
                             result[0] += fillBagSlot(bag, doAddSlot, drawer);

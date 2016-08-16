@@ -26,13 +26,13 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
 
-@Mod(modid = BitDrawers.MODID, version = BitDrawers.VERSION, name = BitDrawers.MODNAME, dependencies = "required-after:chiselsandbits@[11.6,];required-after:StorageDrawers@1.10.2-3.2.2;required-after:Chameleon")
+@Mod(modid = BitDrawers.MODID, version = BitDrawers.VERSION, name = BitDrawers.MODNAME, dependencies = "required-after:chiselsandbits@[11.6,);required-after:StorageDrawers@[1.10.2-3.2.4,);required-after:Chameleon")
 @ChiselsAndBitsAddon
 public class BitDrawers implements IChiselsAndBitsAddon
 {
     public static final String MODNAME = "Drawers & Bits";
     public static final String MODID = "bitdrawers";
-    public static final String VERSION = "0.21";
+    public static final String VERSION = "0.3";
     
     @SidedProxy(
             clientSide = "mods.belgabor.bitdrawers.client.ClientProxy",
@@ -68,7 +68,7 @@ public class BitDrawers implements IChiselsAndBitsAddon
     
     @EventHandler
     public void init(FMLInitializationEvent event) {
-        MinecraftForge.EVENT_BUS.register(new PlayerEventHandler());
+        //MinecraftForge.EVENT_BUS.register(new PlayerEventHandler());
     }
     
     @EventHandler
