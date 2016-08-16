@@ -11,6 +11,7 @@ import com.mojang.authlib.GameProfile;
 import mod.chiselsandbits.api.*;
 import mod.chiselsandbits.core.api.BitAccess;
 import mod.chiselsandbits.core.api.BitBrush;
+import mod.chiselsandbits.helpers.ModUtil;
 import mods.belgabor.bitdrawers.BitDrawers;
 import mods.belgabor.bitdrawers.core.BDLogger;
 import mods.belgabor.bitdrawers.core.BitHelper;
@@ -361,7 +362,7 @@ public class TileBitController extends TileEntityController {
         if (toExtract == 0)
             return null;
 
-        ItemStack stack = source.getBitsAsItem(BitHelper.getBitsFacing(pattern), ItemType.CHISLED_BLOCK, false);
+        ItemStack stack = source.getBitsAsItem(ModUtil.getSide(pattern), ItemType.CHISLED_BLOCK, false);
         stack.stackSize = toExtract;
         Integer[] temp = new Integer[1];
 

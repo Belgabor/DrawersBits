@@ -5,6 +5,7 @@ import com.jaquadro.minecraft.chameleon.model.ProxyBuilderModel;
 import com.jaquadro.minecraft.chameleon.resources.register.DefaultRegister;
 import com.jaquadro.minecraft.storagedrawers.block.BlockDrawers;
 import com.jaquadro.minecraft.storagedrawers.block.EnumCompDrawer;
+import com.jaquadro.minecraft.storagedrawers.block.modeldata.DrawerStateModelData;
 import com.jaquadro.minecraft.storagedrawers.block.tile.TileEntityDrawers;
 import com.jaquadro.minecraft.storagedrawers.client.model.component.DrawerDecoratorModel;
 import com.jaquadro.minecraft.storagedrawers.client.model.component.DrawerSealedModel;
@@ -73,18 +74,23 @@ public final class BitDrawerModel
         @Override
         protected IBakedModel buildModel (IBlockState state, IBakedModel parent) {
             EnumCompDrawer drawer = (EnumCompDrawer)state.getValue(BlockBitDrawers.SLOTS);
-            EnumFacing dir = state.getValue(BlockBitDrawers.FACING);
+            EnumFacing dir = state.getValue(BlockDrawers.FACING);
 
             if (!(state instanceof IExtendedBlockState))
                 return parent;
 
             IExtendedBlockState xstate = (IExtendedBlockState)state;
-            TileEntityDrawers tile = xstate.getValue(BlockDrawers.TILE);
+            DrawerStateModelData stateModel = xstate.getValue(BlockDrawers.STATE_MODEL);
 
-            if (!DrawerDecoratorModel.shouldHandleState(tile))
+            try {
+                if (!DrawerDecoratorModel.shouldHandleState(stateModel))
+                    return parent;
+
+                return new DrawerDecoratorModel(parent, xstate, drawer, dir, stateModel);
+            }
+            catch (Throwable t) {
                 return parent;
-
-            return new DrawerDecoratorModel(parent, xstate, drawer, dir, tile);
+            }
         }
 
         @Override
