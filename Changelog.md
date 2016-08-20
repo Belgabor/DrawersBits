@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.31
+* [NEW] Config option to turn the bit drawer controller off
+
 ## Version 0.3
 * [NEW] Bit Drawer Controller
 * [FIXED] Compatibility with Storage Drawers 3.2.4

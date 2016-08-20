@@ -3,6 +3,7 @@ package mods.belgabor.bitdrawers.core;
 import com.jaquadro.minecraft.chameleon.Chameleon;
 import com.jaquadro.minecraft.chameleon.resources.ModelRegistry;
 import com.jaquadro.minecraft.storagedrawers.client.renderer.TileEntityDrawersRenderer;
+import mods.belgabor.bitdrawers.BitDrawers;
 import mods.belgabor.bitdrawers.block.BlockBitController;
 import mods.belgabor.bitdrawers.block.BlockBitDrawers;
 import mods.belgabor.bitdrawers.block.tile.TileBitController;
@@ -28,9 +29,11 @@ public class BlockRegistry {
         GameRegistry.register((new ItemBitDrawer(bitDrawer)).setRegistryName(bitDrawer.getRegistryName()));
         GameRegistry.registerTileEntity(TileBitDrawers.class, bitDrawer.getRegistryName().toString());
         bitController = new BlockBitController("bitcontroller");
-        GameRegistry.register(bitController);
-        GameRegistry.register((new ItemBitController(bitController)).setRegistryName(bitController.getRegistryName()));
-        GameRegistry.registerTileEntity(TileBitController.class, bitController.getRegistryName().toString());
+        if (BitDrawers.config.enableBitController) {
+            GameRegistry.register(bitController);
+            GameRegistry.register((new ItemBitController(bitController)).setRegistryName(bitController.getRegistryName()));
+            GameRegistry.registerTileEntity(TileBitController.class, bitController.getRegistryName().toString());
+        }
     }
 
     @SideOnly(Side.CLIENT)
@@ -40,6 +43,8 @@ public class BlockRegistry {
         ModelRegistry modelRegistry = Chameleon.instance.modelRegistry;
 
         modelRegistry.registerModel(new BitDrawerModel.Register());
-        modelRegistry.registerItemVariants(bitController);
+        if (BitDrawers.config.enableBitController) {
+            modelRegistry.registerItemVariants(bitController);
+        }
     }
 }

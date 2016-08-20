@@ -17,6 +17,7 @@ public class ConfigManager {
     public boolean allowBagMultiInsertion = true;
     public boolean allowChiseledBlockMultiInsertion = false;
     public boolean chatty = true;
+    public boolean enableBitController = true;
     
     public ConfigManager(File config) {
         this.config = new Configuration(config);
@@ -43,6 +44,10 @@ public class ConfigManager {
         chatty = config.get(Configuration.CATEGORY_GENERAL, "chatty", chatty,
                 "If set the player will be informed in chat if something didn't work (if possible).")
                 .setLanguageKey(LANG_PREFIX + "prop.chatty").getBoolean();
+
+        enableBitController = config.get(Configuration.CATEGORY_GENERAL, "enableBitController", enableBitController,
+                "Enable the bit drawer controller.")
+                .setLanguageKey(LANG_PREFIX + "prop.enableBitController").getBoolean();
 
         if (config.hasChanged())
             config.save();
