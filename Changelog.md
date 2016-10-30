@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.32
+* [FIXED] Compatibility with Storage Drawers 3.3.0 (Belgabor/DrawersBits#5)
+
 ## Version 0.31
 * [NEW] Config option to turn the bit drawer controller off
 

@@ -3,7 +3,6 @@ package mods.belgabor.bitdrawers;
 /**
  * Created by Belgabor on 02.06.2016.
  */
-import com.jaquadro.minecraft.storagedrawers.network.BlockClickMessage;
 import com.jaquadro.minecraft.storagedrawers.network.CountUpdateMessage;
 import mod.chiselsandbits.api.ChiselsAndBitsAddon;
 import mod.chiselsandbits.api.IChiselAndBitsAPI;
@@ -13,8 +12,6 @@ import mods.belgabor.bitdrawers.core.BDLogger;
 import mods.belgabor.bitdrawers.core.BlockRegistry;
 import mods.belgabor.bitdrawers.core.CommonProxy;
 import mods.belgabor.bitdrawers.core.RecipeRegistry;
-import mods.belgabor.bitdrawers.event.PlayerEventHandler;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
@@ -26,13 +23,13 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
 
-@Mod(modid = BitDrawers.MODID, version = BitDrawers.VERSION, name = BitDrawers.MODNAME, dependencies = "required-after:chiselsandbits@[11.6,);required-after:StorageDrawers@[1.10.2-3.2.4,);required-after:Chameleon")
+@Mod(modid = BitDrawers.MODID, version = BitDrawers.VERSION, name = BitDrawers.MODNAME, dependencies = "required-after:chiselsandbits@[11.6,);required-after:StorageDrawers@[1.10.2-3.3.0,);required-after:Chameleon")
 @ChiselsAndBitsAddon
 public class BitDrawers implements IChiselsAndBitsAddon
 {
     public static final String MODNAME = "Drawers & Bits";
     public static final String MODID = "bitdrawers";
-    public static final String VERSION = "0.31";
+    public static final String VERSION = "0.32";
     
     @SidedProxy(
             clientSide = "mods.belgabor.bitdrawers.client.ClientProxy",
@@ -56,7 +53,6 @@ public class BitDrawers implements IChiselsAndBitsAddon
         network = NetworkRegistry.INSTANCE.newSimpleChannel(MODID);
         blocks.init();
         proxy.initClient();
-        network.registerMessage(BlockClickMessage.Handler.class, BlockClickMessage.class, 0, Side.SERVER);
         
         if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
             network.registerMessage(CountUpdateMessage.Handler.class, CountUpdateMessage.class, 1, Side.CLIENT);
@@ -64,11 +60,6 @@ public class BitDrawers implements IChiselsAndBitsAddon
         else {
             network.registerMessage(CountUpdateMessage.HandlerStub.class, CountUpdateMessage.class, 1, Side.CLIENT);
         }
-    }
-    
-    @EventHandler
-    public void init(FMLInitializationEvent event) {
-        //MinecraftForge.EVENT_BUS.register(new PlayerEventHandler());
     }
     
     @EventHandler

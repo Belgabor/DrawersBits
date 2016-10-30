@@ -1,5 +1,7 @@
 package mods.belgabor.bitdrawers.block.tile;
 
+import com.jaquadro.minecraft.storagedrawers.StorageDrawers;
+import com.jaquadro.minecraft.storagedrawers.api.security.ISecurityProvider;
 import com.jaquadro.minecraft.storagedrawers.api.storage.IDrawer;
 import com.jaquadro.minecraft.storagedrawers.api.storage.IDrawerGroup;
 import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.IProtectable;
@@ -15,9 +17,12 @@ import mod.chiselsandbits.helpers.ModUtil;
 import mods.belgabor.bitdrawers.BitDrawers;
 import mods.belgabor.bitdrawers.core.BDLogger;
 import mods.belgabor.bitdrawers.core.BitHelper;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.world.ILockableContainer;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
@@ -26,8 +31,9 @@ import java.util.*;
 /**
  * Created by Belgabor on 24.07.2016.
  */
-public class TileBitController extends TileEntityController {
+public class TileBitController extends TileEntityController implements IProtectable {
     protected Map<Integer, List<SlotRecord>> drawerBitLookup = new HashMap<>();
+    private String securityKey;
     
     @Override
     public int interactPutItemsIntoInventory (EntityPlayer player) {
@@ -196,12 +202,16 @@ public class TileBitController extends TileEntityController {
 
     @Override
     protected void resetCache() {
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("TileBitController:resetCache");
         drawerBitLookup.clear();
         super.resetCache();
     }
 
     @Override
     public void updateCache() {
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("TileBitController:updateCache");
         super.updateCache();
         rebuildBitLookup(drawerBitLookup, drawerSlotList);
     }
@@ -226,10 +236,10 @@ public class TileBitController extends TileEntityController {
 
             ItemStack item = drawer.getStoredItemPrototype();
             if (BitDrawers.cnb_api.getItemType(item) == ItemType.CHISLED_BIT) {
-                if (BitDrawers.config.debugTrace)
-                    BDLogger.info("Rebuilding: %s %d %d", item.getDisplayName(), record.slot, i);
                 try {
                     IBitBrush brush = BitDrawers.cnb_api.createBrush(item);
+                    if (BitDrawers.config.debugTrace)
+                        BDLogger.info("Rebuilding: %s %d %d %d", item.getDisplayName(), record.slot, i, brush.getStateID());
                     List<SlotRecord> slotRecords = lookup.get(brush.getStateID());
                     if (slotRecords == null) {
                         slotRecords = new ArrayList<>();
@@ -239,6 +249,8 @@ public class TileBitController extends TileEntityController {
                 } catch (APIExceptions.InvalidBitItem invalidBitItem) {}
             }
         }
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("Rebuilt: %d entries", lookup.size());
     }
     
     protected IDrawer getAccessibleBitDrawer(SlotRecord slotRecord, GameProfile profile) {
@@ -321,8 +333,12 @@ public class TileBitController extends TileEntityController {
     }
     
     public ItemStack retrieveByPattern(ItemStack pattern, EntityPlayer player, boolean getStack) {
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("TileBitController:retrieveByPattern");
         IBitAccess source = BitDrawers.cnb_api.createBitItem(pattern);
         GameProfile profile = player.getGameProfile();
+        
+        //updateCache();
         
         if (source == null)
             return null;
@@ -330,15 +346,24 @@ public class TileBitController extends TileEntityController {
         BitHelper.BitCounter counter = new BitHelper.BitCounter();
         source.visitBits(counter);
         
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("Lookup size: %d", drawerBitLookup.size());
+        
         Map<Integer, Integer> available = new HashMap<>();
         counter.counts.forEach((blockStateID, count) -> {
+            if (BitDrawers.config.debugTrace)
+                BDLogger.info("Needed %d %d", blockStateID, count);
             available.put(blockStateID, 0);
             List<SlotRecord> records = drawerBitLookup.get(blockStateID);
             if (records == null)
                 return;
             records.stream().forEachOrdered(slotRecord -> {
+                if (BitDrawers.config.debugTrace)
+                    BDLogger.info("  Trying %d", slotRecord.slot);
                 IDrawer drawer = getAccessibleBitDrawer(slotRecord, profile);
                 if (drawer != null) {
+                    if (BitDrawers.config.debugTrace)
+                        BDLogger.info("  Drawer found: %d", slotRecord.slot);
                     available.put(blockStateID, available.get(blockStateID) + drawer.getStoredItemCount());
                 }
             });
@@ -347,6 +372,8 @@ public class TileBitController extends TileEntityController {
         Integer[] max = new Integer[1];
         max[0] = Integer.MAX_VALUE;
         available.forEach((blockStateID, count) -> {
+            if (BitDrawers.config.debugTrace)
+                BDLogger.info("Available %d %d", blockStateID, count);
             int m = count / counter.counts.get(blockStateID);
             if (m == 0 && BitDrawers.config.chatty) {
                 ItemStack desc = (new BitBrush(blockStateID)).getItemStack(1);
@@ -387,6 +414,66 @@ public class TileBitController extends TileEntityController {
             return null;
         }
         return stack;
+    }
+    
+    @Override
+    public void readFromNBT (NBTTagCompound tag) {
+        super.readFromNBT(tag);
+
+        securityKey = null;
+        if (tag.hasKey("Sec"))
+            securityKey = tag.getString("Sec");
+
+    }
+
+    @Override
+    public NBTTagCompound writeToNBT (NBTTagCompound tag) {
+        super.writeToNBT(tag);
+
+        if (securityKey != null)
+            tag.setString("Sec", securityKey);
+        
+        return tag;
+    }
+
+    @Override
+    public UUID getOwner() {
+        return null;
+    }
+
+    @Override
+    public boolean setOwner(UUID uuid) {
+        return false;
+    }
+
+    @Override
+    public ISecurityProvider getSecurityProvider() {
+        return StorageDrawers.securityRegistry.getProvider(securityKey);
+    }
+
+    @Override
+    public ILockableContainer getLockableContainer() {
+        return null;
+    }
+
+    @Override
+    public boolean setSecurityProvider(ISecurityProvider provider) {
+        if (!StorageDrawers.config.cache.enablePersonalUpgrades)
+            return false;
+
+        String newKey = (provider == null) ? null : provider.getProviderID();
+        if ((newKey != null && !newKey.equals(securityKey)) || (securityKey != null && !securityKey.equals(newKey))) {
+            securityKey = newKey;
+
+            if (worldObj != null && !worldObj.isRemote) {
+                markDirty();
+
+                IBlockState state = worldObj.getBlockState(getPos());
+                worldObj.notifyBlockUpdate(getPos(), state, state, 3);
+            }
+        }
+
+        return true;
     }
 
     protected static class BitCollectorData {

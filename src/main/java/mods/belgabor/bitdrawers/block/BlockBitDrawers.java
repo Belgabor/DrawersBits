@@ -7,6 +7,8 @@ import com.jaquadro.minecraft.storagedrawers.block.BlockDrawers;
 import com.jaquadro.minecraft.storagedrawers.block.EnumCompDrawer;
 import com.jaquadro.minecraft.storagedrawers.block.dynamic.StatusModelData;
 import com.jaquadro.minecraft.storagedrawers.block.tile.TileEntityDrawers;
+import com.jaquadro.minecraft.storagedrawers.config.ConfigManager;
+import com.jaquadro.minecraft.storagedrawers.config.PlayerConfigSetting;
 import com.jaquadro.minecraft.storagedrawers.inventory.DrawerInventoryHelper;
 import com.jaquadro.minecraft.storagedrawers.security.SecurityManager;
 import mod.chiselsandbits.api.APIExceptions;
@@ -27,6 +29,7 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -34,20 +37,18 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.property.ExtendedBlockState;
 import net.minecraftforge.common.property.IUnlistedProperty;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Belgabor on 02.06.2016.
@@ -178,32 +179,20 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
 
     @Override
     public void onBlockClicked(World world, BlockPos pos, EntityPlayer player) {
-        if (world.isRemote && BitDrawers.config.debugTrace)
-            BDLogger.info("BlockBitDrawers:onBlockClicked");
-        super.onBlockClicked(world, pos, player);
-    }
-
-    @Override
-    public void onBlockClicked (final World world, final BlockPos pos, final EntityPlayer player, final EnumFacing side, final float hitX, final float hitY, final float hitZ, final boolean invertShift) {
-        if (world.isRemote)
+        if (world.isRemote) {
             return;
-        
-        if (BitDrawers.config.debugTrace)
-            BDLogger.info("BlockBitDrawers:onBlockClicked %f %f %f", hitX, hitY, hitZ);
+        }
 
-        ((WorldServer)world).addScheduledTask(() -> BlockBitDrawers.this.onBlockClickedAsync(world, pos, player, side, hitX, hitY, hitZ, invertShift));
-    }
-
-    protected void onBlockClickedAsync (World world, BlockPos pos, EntityPlayer player, EnumFacing side, float hitX, float hitY, float hitZ, boolean invertShift) {
         if (BitDrawers.config.debugTrace)
             BDLogger.info("IExtendedBlockClickHandler.onBlockClicked");
-
-        if (!player.capabilities.isCreativeMode) {
-            PlayerInteractEvent.LeftClickBlock event = new PlayerInteractEvent.LeftClickBlock(player, pos, side, new Vec3d(hitX, hitY, hitZ));
-            MinecraftForge.EVENT_BUS.post(event);
-            if (event.isCanceled())
-                return;
-        }
+        
+        RayTraceResult rayResult = net.minecraftforge.common.ForgeHooks.rayTraceEyes(player, ((EntityPlayerMP) player).interactionManager.getBlockReachDistance() + 1);
+        EnumFacing side = rayResult.sideHit;
+        // adjust hitVec for drawers
+        float hitX = (float)(rayResult.hitVec.xCoord - pos.getX());
+        float hitY = (float)(rayResult.hitVec.yCoord - pos.getY());
+        float hitZ = (float)(rayResult.hitVec.zCoord - pos.getZ());
+        
         TileEntityDrawers tileDrawers = getTileEntitySafe(world, pos);
         if (tileDrawers.getDirection() != side.ordinal())
             return;
@@ -214,11 +203,20 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
         if (!SecurityManager.hasAccess(player.getGameProfile(), tileDrawers))
             return;
 
+        Map<String, PlayerConfigSetting<?>> configSettings = ConfigManager.serverPlayerConfigSettings.get(player.getUniqueID());
+        boolean invertShift = false;
+        if (configSettings != null) {
+            PlayerConfigSetting<Boolean> setting = (PlayerConfigSetting<Boolean>) configSettings.get("invertShift");
+            if (setting != null) {
+                invertShift = setting.value;
+            }
+        }
+        
         int slot = getDrawerSlot(getDrawerCount(world.getBlockState(pos)), side.ordinal(), hitX, hitY, hitZ);
         IDrawer drawer = tileDrawers.getDrawer(slot);
 
         ItemStack item;
-        
+
         ItemStack held = player.inventory.getCurrentItem();
         ItemType heldType = BitDrawers.cnb_api.getItemType(held);
         IItemHandler handler = held==null?null:held.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
@@ -274,7 +272,7 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
             if (item == null)
                 return;
             int bitCount = item.stackSize;
-            
+
             if (player.isSneaking() != invertShift)
                 item.stackSize = 64;
             else
@@ -282,7 +280,7 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
             item.stackSize = Math.min(item.stackSize, drawer.getStoredItemCount() / bitCount);
             if (item.stackSize == 0)
                 return;
-            
+
             drawer.setStoredItemCount(drawer.getStoredItemCount() - (item.stackSize * bitCount));
         } else {
             if (player.isSneaking() != invertShift)
@@ -303,9 +301,9 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
             else if (!world.isRemote)
                 world.playSound(null, pos.getX() + .5f, pos.getY() + .5f, pos.getZ() + .5f, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, .2f, ((world.rand.nextFloat() - world.rand.nextFloat()) * .7f + 1) * 2);
         }
-        
-    }
 
+    }
+    
     protected void dropItemStack (World world, BlockPos pos, EntityPlayer player, ItemStack stack) {
         EntityItem entity = new EntityItem(world, pos.getX() + .5f, pos.getY() + .1f, pos.getZ() + .5f, stack);
         entity.addVelocity(-entity.motionX, -entity.motionY, -entity.motionZ);
