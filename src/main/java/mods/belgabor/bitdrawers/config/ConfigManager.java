@@ -1,6 +1,8 @@
 package mods.belgabor.bitdrawers.config;
 
+import mods.belgabor.bitdrawers.BitDrawers;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.config.Property;
 
 import java.io.File;
 
@@ -18,6 +20,9 @@ public class ConfigManager {
     public boolean allowChiseledBlockMultiInsertion = false;
     public boolean chatty = true;
     public boolean enableBitController = true;
+    public String lastSDVersionWarned = "";
+    
+    private Property propLastSDVersionWarned;
     
     public ConfigManager(File config) {
         this.config = new Configuration(config);
@@ -48,8 +53,20 @@ public class ConfigManager {
         enableBitController = config.get(Configuration.CATEGORY_GENERAL, "enableBitController", enableBitController,
                 "Enable the bit drawer controller.")
                 .setLanguageKey(LANG_PREFIX + "prop.enableBitController").getBoolean();
+        
+        propLastSDVersionWarned = config.get(Configuration.CATEGORY_GENERAL, "lastSDVersionWarned", lastSDVersionWarned,
+                "Last Storage Drawer version warned about (internal, you should not change this without good reason).")
+                .setLanguageKey(LANG_PREFIX + "prop.lastSDVersionWarned");
+
+        lastSDVersionWarned = propLastSDVersionWarned.getString();
 
         if (config.hasChanged())
             config.save();
+    }
+    
+    public void updateSDVersion() {
+        propLastSDVersionWarned.set(BitDrawers.detectedSdVersion);
+        lastSDVersionWarned = BitDrawers.detectedSdVersion;
+        config.save();
     }
 }

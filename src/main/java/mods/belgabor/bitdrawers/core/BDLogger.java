@@ -31,6 +31,10 @@ public class BDLogger {
         log(Level.ERROR, message, args);
     }
     
+    public static void warn(String message, Object ... args) {
+        log(Level.WARN, message, args);
+    }
+    
     public static void error(Throwable t) {
         log(Level.ERROR, t);
     }

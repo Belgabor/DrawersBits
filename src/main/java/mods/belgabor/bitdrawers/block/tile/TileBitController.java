@@ -222,7 +222,7 @@ public class TileBitController extends TileEntityController implements IProtecta
 
         for (int i = 0; i < records.size(); i++) {
             SlotRecord record = records.get(i);
-            IDrawerGroup group = getGroupForCoord(record.coord);
+            IDrawerGroup group = getGroupForSlotRecord(record);
             if (group == null)
                 continue;
 
@@ -256,7 +256,7 @@ public class TileBitController extends TileEntityController implements IProtecta
     protected IDrawer getAccessibleBitDrawer(SlotRecord slotRecord, GameProfile profile) {
         if (slotRecord == null)
             return null;
-        IDrawerGroup group = this.getGroupForCoord(slotRecord.coord);
+        IDrawerGroup group = this.getGroupForSlotRecord(slotRecord);
         if (!(group instanceof IProtectable) || SecurityManager.hasAccess(profile, (IProtectable) group)) {
             return group.getDrawer(slotRecord.slot);
         }

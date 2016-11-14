@@ -7,3 +7,13 @@ bitDrawers.config.prop.enableDebugLogging.tooltip=Prints extra information to th
 bitDrawers.config.prop.bitdrawerBaseStorage=Bit Drawer Base Storage
 bitDrawers.config.prop.bitdrawerBaseStorage.tooltip=Base storage of a bit drawer (stacks).
 chat.notEnough=Not enough bits available: %s
+bitDrawers.startup_a=Due to it's internal workings, Drawers & Bits highly depends on the version of Storage Drawers.
+bitDrawers.startup_b=This version was developed for version %s, you have installed version %s.
+bitDrawers.startup_min=That's a minor difference, so it is unlikely to cause an issue.
+bitDrawers.startup_maj=The numbers indicate a possibly breaking change, so crashes may occur.
+bitDrawers.startup_fubar=The version check failed, so things will probably fall apart.
+bitDrawers.startup_c=In any case it is highly recommended to make a backup before loading any world.
+bitDrawers.startup_d=If any problem occurs, please open an issue on the GitHub issue tracker (linked on the Curse project page).
+bitDrawers.startup_e=Note: This warning will not show up again until the version of Storage Drawers changes.
+
+
