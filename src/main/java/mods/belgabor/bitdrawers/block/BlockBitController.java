@@ -33,7 +33,7 @@ import java.util.Map;
 /**
  * Created by Belgabor on 24.07.2016.
  */
-public class BlockBitController extends BlockController implements /*IExtendedBlockClickHandler,*/ IBlockDestroyHandler {
+public class BlockBitController extends BlockController /*implements IBlockDestroyHandler*/ {
     public BlockBitController(String name) {
         super(name);
     }
@@ -68,27 +68,17 @@ public class BlockBitController extends BlockController implements /*IExtendedBl
 
             return false;
         }
-
-        return willHarvest || super.removedByPlayer(state, world, pos, player, false);
+        
+        return super.removedByPlayer(state, world, pos, player, willHarvest);
     }
 
-    @Override
-    public void onBlockDestroyed(final World world, final BlockPos pos) {
-        if(!world.isRemote) {
-            ((WorldServer)world).addScheduledTask(() -> BlockBitController.this.onBlockDestroyedAsync(world, pos));
-        }
-    }
-
-    private void onBlockDestroyedAsync(World world, BlockPos pos) {
-        world.setBlockState(pos, Blocks.AIR.getDefaultState(), world.isRemote?11:3);
-    }
-    
     @Override
     public void onBlockClicked (World world, BlockPos pos, EntityPlayer player) {
         if (world.isRemote) {
             return;
         }
-        RayTraceResult ray = Minecraft.getMinecraft().objectMouseOver;
+        //RayTraceResult ray = Minecraft.getMinecraft().objectMouseOver;
+        RayTraceResult ray = net.minecraftforge.common.ForgeHooks.rayTraceEyes(player, ((EntityPlayerMP) player).interactionManager.getBlockReachDistance() + 1);
         EnumFacing side = ray.sideHit;
 
         if (BitDrawers.config.debugTrace)

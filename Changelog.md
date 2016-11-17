@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.34
+* [FIXED] Breaking a bit controller now works properly (Belgabor/DrawersBits#7)
+
 ## Version 0.33
 * [NEW] Warning in log and GUI if Storage Drawers version differs from the one targeted
 * [FIXED] Compatibility with Storage Drawers 3.4.4 (Belgabor/DrawersBits#6)
