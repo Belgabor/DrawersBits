@@ -104,6 +104,11 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
         else
             return 2;
     }
+    
+    @Override
+    protected boolean overridesShouldSideBeRendered () {
+        return false;
+    }
 
     @Override
     public IBlockState onBlockPlaced (World world, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer) {
