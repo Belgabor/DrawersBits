@@ -2,10 +2,7 @@ package mods.belgabor.bitdrawers.storage;
 
 import com.jaquadro.minecraft.storagedrawers.api.storage.IDrawer;
 import com.jaquadro.minecraft.storagedrawers.api.storage.IFractionalDrawer;
-import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.IItemLockable;
-import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.IShroudable;
-import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.IVoidable;
-import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.LockAttribute;
+import com.jaquadro.minecraft.storagedrawers.api.storage.attribute.*;
 import com.jaquadro.minecraft.storagedrawers.storage.BaseDrawerData;
 import com.jaquadro.minecraft.storagedrawers.storage.ICentralInventory;
 import mods.belgabor.bitdrawers.BitDrawers;
@@ -19,7 +16,7 @@ import net.minecraft.nbt.NBTTagCompound;
  * Created by Belgabor on 02.06.2016.
  * Based on CompDrawerData by jaquadro
  */
-public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, IVoidable, IShroudable, IItemLockable
+public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, IVoidable, IShroudable, IItemLockable, IQuantifiable
 {
     private static final ItemStack nullStack = new ItemStack((Item)null);
 
@@ -159,6 +156,16 @@ public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, 
     @Override
     public boolean setIsShrouded (boolean state) {
         return central.setIsSlotShrouded(slot, state);
+    }
+    
+    @Override
+    public boolean isShowingQuantity () {
+        return central.isSlotShowingQuantity(slot);
+    }
+
+    @Override
+    public boolean setIsShowingQuantity (boolean state) {
+        return central.setIsSlotShowingQuantity(slot, state);
     }
 
     @Override

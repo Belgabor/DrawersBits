@@ -250,9 +250,9 @@ public class TileBitDrawers extends TileEntityDrawers
                 ((BitDrawerData) drawer).refresh();
         }
 
-        if (worldObj != null && !worldObj.isRemote) {
-            IBlockState state = worldObj.getBlockState(getPos());
-            worldObj.notifyBlockUpdate(getPos(), state, state, 3);
+        if (getWorld() != null && !getWorld().isRemote) {
+            IBlockState state = getWorld().getBlockState(getPos());
+            getWorld().notifyBlockUpdate(getPos(), state, state, 3);
         }
     }
 
@@ -276,8 +276,8 @@ public class TileBitDrawers extends TileEntityDrawers
     public void clientUpdateCount (int slot, int count) {
         if (count != pooledCount) {
             pooledCount = count;
-            IBlockState state = worldObj.getBlockState(getPos());
-            worldObj.notifyBlockUpdate(getPos(), state, state, 3);
+            IBlockState state = getWorld().getBlockState(getPos());
+            getWorld().notifyBlockUpdate(getPos(), state, state, 3);
         }
     }
 
@@ -308,9 +308,9 @@ public class TileBitDrawers extends TileEntityDrawers
         protoStack[slot] = stack==null?null:stack.copy();
         //centralInventory.setStoredItem(slot, stack, 0);
         //getDrawer(slot).setStoredItem(stack, 0);
-        if (worldObj != null && !worldObj.isRemote) {
-            IBlockState state = worldObj.getBlockState(getPos());
-            worldObj.notifyBlockUpdate(getPos(), state, state, 3);
+        if (getWorld() != null && !getWorld().isRemote) {
+            IBlockState state = getWorld().getBlockState(getPos());
+            getWorld().notifyBlockUpdate(getPos(), state, state, 3);
         }
     }
     
@@ -341,9 +341,9 @@ public class TileBitDrawers extends TileEntityDrawers
                         ((BitDrawerData) drawer).refresh();
                 }
 
-                if (worldObj != null && !worldObj.isRemote) {
-                    IBlockState state = worldObj.getBlockState(getPos());
-                    worldObj.notifyBlockUpdate(getPos(), state, state, 3);
+                if (getWorld() != null && !getWorld().isRemote) {
+                    IBlockState state = getWorld().getBlockState(getPos());
+                    getWorld().notifyBlockUpdate(getPos(), state, state, 3);
                 }
             }
             else if (itemPrototype == null) {
@@ -386,9 +386,9 @@ public class TileBitDrawers extends TileEntityDrawers
                     markAmountDirty();
                 else {
                     clear();
-                    if (worldObj != null && !worldObj.isRemote) {
-                        IBlockState state = worldObj.getBlockState(getPos());
-                        worldObj.notifyBlockUpdate(getPos(), state, state, 3);
+                    if (getWorld() != null && !getWorld().isRemote) {
+                        IBlockState state = getWorld().getBlockState(getPos());
+                        getWorld().notifyBlockUpdate(getPos(), state, state, 3);
                     }
                 }
             }
@@ -490,6 +490,16 @@ public class TileBitDrawers extends TileEntityDrawers
         }
 
         @Override
+        public boolean isSlotShowingQuantity(int i) {
+            return TileBitDrawers.this.isShowingQuantity();
+        }
+        
+        @Override
+        public boolean setIsSlotShowingQuantity(int slot, boolean state) {
+            return TileBitDrawers.this.setIsShowingQuantity(state);
+        }
+
+        @Override
         public boolean isLocked (int slot, LockAttribute attr) {
             return TileBitDrawers.this.isItemLocked(attr);
         }
@@ -568,8 +578,8 @@ public class TileBitDrawers extends TileEntityDrawers
             if (getWorld().isRemote)
                 return;
 
-            IBlockState state = worldObj.getBlockState(getPos());
-            worldObj.notifyBlockUpdate(getPos(), state, state, 3);
+            IBlockState state = getWorld().getBlockState(getPos());
+            getWorld().notifyBlockUpdate(getPos(), state, state, 3);
         }
     }
 

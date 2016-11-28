@@ -80,6 +80,7 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
     }
 
     @Override
+    @SideOnly(Side.CLIENT)
     public StatusModelData getStatusInfo (IBlockState state) {
         return statusInfo;
     }
@@ -104,7 +105,7 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
         else
             return 2;
     }
-
+    
     @Override
     public IBlockState onBlockPlaced (World world, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer) {
         return getDefaultState();
@@ -218,6 +219,8 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
         ItemStack item;
 
         ItemStack held = player.inventory.getCurrentItem();
+        if (BitDrawers.config.debugTrace)
+            BDLogger.info("  Player %s", held==null?"does not hold an item":"is holding an item");
         ItemType heldType = BitDrawers.cnb_api.getItemType(held);
         IItemHandler handler = held==null?null:held.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
         if (handler instanceof IBitBag) {

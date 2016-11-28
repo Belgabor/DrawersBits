@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.35
+* [UPDATED] Compatibility with the SD 3.5.X quantification key
+* [NEW] Recipes to turn the bit drawer/controller back into compacting drawer/drawer controller 
+
 ## Version 0.34
 * [FIXED] Breaking a bit controller now works properly (Belgabor/DrawersBits#7)
 
