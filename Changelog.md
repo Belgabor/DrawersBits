@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 0.4
+* [UPDATED] to 1.11.2
+* [CHANGED] Config file name now matches the mod's file name instead of the internal mod id.
+* [REMOVED] Warning in GUI if Storage Drawers version differs from the one targeted is gone, wasn't serving it's purpose. There is still a warning in the log, but usually MC crashes before it reaches that point
+
+
 ## Version 0.35
 * [UPDATED] Compatibility with the SD 3.5.X quantification key
 * [NEW] Recipes to turn the bit drawer/controller back into compacting drawer/drawer controller 

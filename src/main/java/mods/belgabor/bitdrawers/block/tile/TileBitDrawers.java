@@ -26,6 +26,8 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
+import javax.annotation.Nonnull;
+
 /**
  * Created by Belgabor on 02.06.2016.
  * Based on TileEntityDrawersComp by jaquadro
@@ -48,6 +50,8 @@ public class TileBitDrawers extends TileEntityDrawers
         super(3);
 
         protoStack = new ItemStack[getDrawerCount()];
+        for (int i = 0; i < protoStack.length; i++)
+            protoStack[i] = ItemStack.EMPTY;
         convRate = new int[getDrawerCount()];
     }
 
@@ -94,7 +98,7 @@ public class TileBitDrawers extends TileEntityDrawers
         if (BitDrawers.config.debugTrace)
             BDLogger.info("TileBitDrawers:interactPutItemsIntoSlot %d", slot);
         ItemStack stack = player.inventory.getCurrentItem();
-        if (stack != null) {
+        if (!stack.isEmpty()) {
             if (stack.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
                 return interactPutBagIntoSlot(slot, stack);
             } else if (slot == 2){
@@ -120,14 +124,14 @@ public class TileBitDrawers extends TileEntityDrawers
         for(int i = 0; i < handler.getSlots(); i++) {
             while (true) {
                 ItemStack extract = handler.extractItem(i, 64, true);
-                if (extract == null)
+                if (extract.isEmpty())
                     break;
-                int extracted = extract.stackSize;
+                int extracted = extract.getCount();
                 int inserted = putItemsIntoSlot(slot, extract, extracted);
                 if (inserted > 0) {
                     added += inserted;
                     ItemStack test = handler.extractItem(i, inserted, false);
-                    if (test.stackSize < inserted)
+                    if (test.getCount() < inserted)
                         BDLogger.error("Could not extract simulated amount from bag. Something went very wrong.");
                 }
                 if (inserted < extracted)
@@ -137,9 +141,9 @@ public class TileBitDrawers extends TileEntityDrawers
         return added;
     }
     
-    public int interactSetCustomSlot(ItemStack stack) {
+    public int interactSetCustomSlot(@Nonnull ItemStack stack) {
         ItemStack bit = getDrawer(1).getStoredItemPrototype();
-        if (bit == null)
+        if (bit.isEmpty())
             return 0;
 
         IBitBrush brush;
@@ -149,10 +153,10 @@ public class TileBitDrawers extends TileEntityDrawers
             return 0;
         }
         ItemStack item = BitHelper.getMonochrome(stack, brush);
-        if (item == null || item.stackSize == 0)
-            populateSlot(2, null, 0);
+        if (item.isEmpty())
+            populateSlot(2, ItemStack.EMPTY, 0);
         else
-            populateSlot(2, item, item.stackSize);
+            populateSlot(2, item, item.getCount());
         
         return 1;
     }
@@ -162,7 +166,7 @@ public class TileBitDrawers extends TileEntityDrawers
         if (BitDrawers.config.debugTrace)
             BDLogger.info("TileBitDrawers:putItemsIntoSlot %d %s %d", slot, stack==null?"null":stack.getDisplayName(), count);
         int added = 0;
-        if (stack != null) {
+        if (!stack.isEmpty()) {
             if (BitDrawers.cnb_api.getItemType(stack) == ItemType.CHISLED_BLOCK) {
                 return putChiseledBlockIntoDrawer(stack, count);
             } else if (convRate != null && convRate[0] == 0) {
@@ -188,7 +192,7 @@ public class TileBitDrawers extends TileEntityDrawers
     public int putChiseledBlockIntoDrawer (ItemStack stack, int count) {
         if (BitDrawers.config.debugTrace)
             BDLogger.info("TileBitDrawers:putChiseledBlockIntoDrawer %s %d", stack==null?"null":stack.getDisplayName(), count);
-        count = Math.min(count, stack.stackSize);
+        count = Math.min(count, stack.getCount());
         IDrawer drawer = getDrawer(1);
         IBitAccess access = BitDrawers.cnb_api.createBitItem(stack);
         if (convRate == null || convRate[0] == 0 || access == null)
@@ -214,13 +218,13 @@ public class TileBitDrawers extends TileEntityDrawers
         int toStore = Math.min(canStore, count);
         int toStoreBits = toStore * bitSize;
         ItemStack store = drawer.getStoredItemPrototype().copy();
-        store.stackSize = toStoreBits;
+        store.setCount(toStoreBits);
         int storedBits = super.putItemsIntoSlot(1, store, toStoreBits);
         if (storedBits != toStoreBits) {
             BDLogger.error("Couldn't store bits when inserting chiseled block. This is not supposed to happen at this point.");
             toStore = storedBits / bitSize;
         }
-        stack.stackSize -= toStore;
+        stack.shrink(toStore);
         return toStore;
     }
 
@@ -229,7 +233,7 @@ public class TileBitDrawers extends TileEntityDrawers
         pooledCount = 0;
 
         for (int i = 0; i < getDrawerCount(); i++) {
-            protoStack[i] = null;
+            protoStack[i] = ItemStack.EMPTY;
             convRate[i] = 0;
         }
 
@@ -289,13 +293,13 @@ public class TileBitDrawers extends TileEntityDrawers
     private void populateSlots (ItemStack stack) {
         if (BitDrawers.cnb_api.getItemType(stack) == ItemType.CHISLED_BIT) {
             ItemStack fullStack = BitHelper.getBlock(stack);
-            if (fullStack != null) {
+            if (!fullStack.isEmpty()) {
                 populateSlot(0, fullStack, 4096);
                 populateSlot(1, stack, 1);
             }
         } else {
             ItemStack bitStack = BitHelper.getBit(stack);
-            if (bitStack != null) {
+            if (!bitStack.isEmpty()) {
                 populateSlot(0, stack, 4096);
                 populateSlot(1, bitStack, 1);
             }
@@ -322,10 +326,21 @@ public class TileBitDrawers extends TileEntityDrawers
         }
 
         @Override
+        public int getDefaultMaxCapacity (int slot) {
+            if (!isDrawerEnabled(slot))
+                return 0;
+
+            if (TileBitDrawers.this.isUnlimited() || TileBitDrawers.this.isVending())
+                return Integer.MAX_VALUE;
+
+            return 64 * getBaseStackCapacity();
+        }
+        
+        @Override
         public IDrawer setStoredItem (int slot, ItemStack itemPrototype, int amount) {
             if (BitDrawers.config.debugTrace)
                 BDLogger.info("setStoredItem %d %s %d", slot, itemPrototype==null?"null":itemPrototype.getDisplayName(), amount);
-            if (itemPrototype != null && convRate != null && convRate[0] == 0) {
+            if ((!itemPrototype.isEmpty()) && convRate != null && convRate[0] == 0) {
                 populateSlots(itemPrototype);
                 for (int i = 0; i < getDrawerCount(); i++) {
                     if (BaseDrawerData.areItemsEqual(protoStack[i], itemPrototype))
@@ -346,7 +361,7 @@ public class TileBitDrawers extends TileEntityDrawers
                     getWorld().notifyBlockUpdate(getPos(), state, state, 3);
                 }
             }
-            else if (itemPrototype == null) {
+            else if (itemPrototype.isEmpty()) {
                 setStoredItemCount(slot, 0);
             }
             return getDrawer(slot);
@@ -396,7 +411,7 @@ public class TileBitDrawers extends TileEntityDrawers
 
         @Override
         public int getMaxCapacity (int slot) {
-            if (protoStack[slot] == null || convRate == null || convRate[slot] == 0)
+            if (protoStack[slot].isEmpty() || convRate == null || convRate[slot] == 0)
                 return 0;
 
             if (TileBitDrawers.this.isUnlimited() || TileBitDrawers.this.isVending()) {
@@ -410,16 +425,16 @@ public class TileBitDrawers extends TileEntityDrawers
 
         @Override
         public int getMaxCapacity (int slot, ItemStack itemPrototype) {
-            if (itemPrototype == null || itemPrototype.getItem() == null)
+            if (itemPrototype.isEmpty() || itemPrototype.getItem() == null)
                 return 0;
 
             if (TileBitDrawers.this.isUnlimited() || TileBitDrawers.this.isVending()) {
-                if (convRate == null || protoStack[slot] == null || convRate[slot] == 0)
+                if (convRate == null || protoStack[slot].isEmpty() || convRate[slot] == 0)
                     return Integer.MAX_VALUE;
                 return Integer.MAX_VALUE / convRate[slot];
             }
 
-            if (convRate == null || protoStack[0] == null || convRate[0] == 0)
+            if (convRate == null || protoStack[0].isEmpty() || convRate[0] == 0)
                 return itemPrototype.getItem().getItemStackLimit(itemPrototype) * getBaseStackCapacity();
 
             if (BaseDrawerData.areItemsEqual(protoStack[slot], itemPrototype))
@@ -438,7 +453,7 @@ public class TileBitDrawers extends TileEntityDrawers
 
         @Override
         public int getStoredItemStackSize (int slot) {
-            if (protoStack[slot] == null || convRate == null || convRate[slot] == 0)
+            if (protoStack[slot].isEmpty() || convRate == null || convRate[slot] == 0)
                 return 0;
 
             return protoStack[slot].getItem().getItemStackLimit(protoStack[slot]);
@@ -454,7 +469,7 @@ public class TileBitDrawers extends TileEntityDrawers
 
         @Override
         public int getConversionRate (int slot) {
-            if (protoStack[slot] == null || convRate == null || convRate[slot] == 0)
+            if (protoStack[slot].isEmpty() || convRate == null || convRate[slot] == 0)
                 return 0;
 
             return convRate[0] / convRate[slot];
@@ -467,7 +482,7 @@ public class TileBitDrawers extends TileEntityDrawers
 
         @Override
         public boolean isSmallestUnit (int slot) {
-            if (protoStack[slot] == null || convRate == null || convRate[slot] == 0)
+            if (protoStack[slot].isEmpty() || convRate == null || convRate[slot] == 0)
                 return false;
 
             return convRate[slot] == 1;
@@ -507,10 +522,9 @@ public class TileBitDrawers extends TileEntityDrawers
         @Override
         public void writeToNBT (int slot, NBTTagCompound tag) {
             ItemStack protoStack = getStoredItemPrototype(slot);
-            if (protoStack != null && protoStack.getItem() != null) {
+            if ((!protoStack.isEmpty()) && protoStack.getItem() != null) {
                 tag.setShort("Item", (short) Item.getIdFromItem(protoStack.getItem()));
                 tag.setShort("Meta", (short) protoStack.getItemDamage());
-                tag.setInteger("Count", 0); // TODO: Remove when ready to break 1.1.7 compat
 
                 if (protoStack.getTagCompound() != null)
                     tag.setTag("Tags", protoStack.getTagCompound());
@@ -522,7 +536,7 @@ public class TileBitDrawers extends TileEntityDrawers
             if (tag.hasKey("Item")) {
                 Item item = Item.getItemById(tag.getShort("Item"));
                 if (item != null) {
-                    ItemStack stack = new ItemStack(item);
+                    ItemStack stack = new ItemStack(item, 1);
                     stack.setItemDamage(tag.getShort("Meta"));
                     if (tag.hasKey("Tags"))
                         stack.setTagCompound(tag.getCompoundTag("Tags"));
@@ -534,7 +548,7 @@ public class TileBitDrawers extends TileEntityDrawers
 
         private void clear () {
             for (int i = 0; i < getDrawerCount(); i++) {
-                protoStack[i] = null;
+                protoStack[i] = ItemStack.EMPTY;
                 convRate[i] = 0;
             }
 

@@ -12,13 +12,15 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
+import javax.annotation.Nonnull;
+
 /**
  * Created by Belgabor on 02.06.2016.
  * Based on CompDrawerData by jaquadro
  */
 public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, IVoidable, IShroudable, IItemLockable, IQuantifiable
 {
-    private static final ItemStack nullStack = new ItemStack((Item)null);
+    //private static final ItemStack nullStack = new ItemStack((Item)null);
 
     private ICentralInventory central;
     private int slot;
@@ -29,20 +31,21 @@ public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, 
     }
 
     @Override
-    public ItemStack getStoredItemPrototype () {
+    public @Nonnull ItemStack getStoredItemPrototype () {
         return central.getStoredItemPrototype(slot);
     }
 
     @Override
-    public void setStoredItem (ItemStack itemPrototype, int amount) {
+    public IDrawer setStoredItem (@Nonnull ItemStack itemPrototype, int amount) {
         if (BitDrawers.config.debugTrace)
-            BDLogger.info("setStoredItem %d %s %d", slot, itemPrototype==null?"null":itemPrototype.getDisplayName(), amount);
-        central.setStoredItem(slot, itemPrototype, amount);
+            BDLogger.info("setStoredItem %d %s %d", slot, itemPrototype.isEmpty()?"EMPTY":itemPrototype.getDisplayName(), amount);
+        IDrawer target = central.setStoredItem(slot, itemPrototype, amount);
         refresh();
 
-        // markDirty
+        return target;
     }
-    
+
+    /*
     @Override
     public IDrawer setStoredItemRedir (ItemStack itemPrototype, int amount) {
         IDrawer target = central.setStoredItem(slot, itemPrototype, amount);
@@ -50,10 +53,11 @@ public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, 
 
         return target;
     }
+    */
 
 
     @Override
-    public boolean areItemsEqual(ItemStack item) {
+    public boolean areItemsEqual(@Nonnull ItemStack item) {
         ItemStack protoStack = this.getStoredItemPrototype();
         return BitHelper.areItemsEqual(item, protoStack);
     }
@@ -74,7 +78,7 @@ public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, 
     }
 
     @Override
-    public int getMaxCapacity (ItemStack itemPrototype) {
+    public int getMaxCapacity (@Nonnull ItemStack itemPrototype) {
         return central.getMaxCapacity(slot, itemPrototype);
     }
 
@@ -87,6 +91,11 @@ public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, 
     public int getStoredItemStackSize () {
         return central.getStoredItemStackSize(slot);
     }
+    
+    @Override
+    public int getDefaultMaxCapacity () {
+        return central.getDefaultMaxCapacity(slot);
+    }
 
     @Override
     protected int getItemCapacityForInventoryStack () {
@@ -94,22 +103,22 @@ public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, 
     }
 
     @Override
-    public boolean canItemBeStored (ItemStack itemPrototype) {
-        if (getStoredItemPrototype() == null && !isItemLocked(LockAttribute.LOCK_EMPTY)) {
-            return BitHelper.getBit(itemPrototype) != null || BitHelper.getBlock(itemPrototype) != null;
+    public boolean canItemBeStored (@Nonnull ItemStack itemPrototype) {
+        if (getStoredItemPrototype().isEmpty() && !isItemLocked(LockAttribute.LOCK_EMPTY)) {
+            return (!BitHelper.getBit(itemPrototype).isEmpty()) || (!BitHelper.getBlock(itemPrototype).isEmpty());
         }
 
         return areItemsEqual(itemPrototype);
     }
 
     @Override
-    public boolean canItemBeExtracted (ItemStack itemPrototype) {
+    public boolean canItemBeExtracted (@Nonnull ItemStack itemPrototype) {
         return areItemsEqual(itemPrototype);
     }
 
     @Override
     public boolean isEmpty () {
-        return getStoredItemPrototype() == null;
+        return getStoredItemPrototype().isEmpty();
     }
 
     @Override

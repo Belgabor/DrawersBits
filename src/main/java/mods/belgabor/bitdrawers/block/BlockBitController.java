@@ -1,7 +1,6 @@
 package mods.belgabor.bitdrawers.block;
 
 import com.jaquadro.minecraft.storagedrawers.block.BlockController;
-import com.jaquadro.minecraft.storagedrawers.block.IBlockDestroyHandler;
 import com.jaquadro.minecraft.storagedrawers.config.ConfigManager;
 import com.jaquadro.minecraft.storagedrawers.config.PlayerConfigSetting;
 import com.jaquadro.minecraft.storagedrawers.security.SecurityManager;
@@ -15,7 +14,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.init.Blocks;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
@@ -24,7 +22,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
@@ -86,8 +83,10 @@ public class BlockBitController extends BlockController /*implements IBlockDestr
         
         TileBitController tileDrawers = (TileBitController) getTileEntitySafe(world, pos);
 
+        /*
         if (!SecurityManager.hasAccess(player.getGameProfile(), tileDrawers))
             return;
+        */
         
         if (getDirection(world, pos).ordinal() != side.ordinal())
             return;
@@ -102,11 +101,11 @@ public class BlockBitController extends BlockController /*implements IBlockDestr
         }            
 
         ItemStack held = player.inventory.getCurrentItem();
-        if (held == null && BitDrawers.config.debugTrace) {
+        if (held.isEmpty() && BitDrawers.config.debugTrace) {
             tileDrawers.updateCache();
         }
         ItemType heldType = BitDrawers.cnb_api.getItemType(held);
-        IItemHandler handler = held==null?null:held.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+        IItemHandler handler = held.isEmpty()?null:held.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
         ItemStack item = null;
         if (handler instanceof IBitBag) {
             IBitBag bag = (IBitBag) handler;
@@ -119,7 +118,7 @@ public class BlockBitController extends BlockController /*implements IBlockDestr
             item = tileDrawers.retrieveByPattern(held, player, player.isSneaking() != invertShift);
         }
         IBlockState state = world.getBlockState(pos);
-        if (item != null && item.stackSize > 0) {
+        if (item != null && (!item.isEmpty())) {
             if (!player.inventory.addItemStackToInventory(item)) {
                 dropItemStack(world, pos.offset(side), player, item);
                 world.notifyBlockUpdate(pos, state, state, 3);
@@ -133,6 +132,6 @@ public class BlockBitController extends BlockController /*implements IBlockDestr
     protected void dropItemStack (World world, BlockPos pos, EntityPlayer player, ItemStack stack) {
         EntityItem entity = new EntityItem(world, pos.getX() + .5f, pos.getY() + .1f, pos.getZ() + .5f, stack);
         entity.addVelocity(-entity.motionX, -entity.motionY, -entity.motionZ);
-        world.spawnEntityInWorld(entity);
+        world.spawnEntity(entity);
     }
 }

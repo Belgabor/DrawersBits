@@ -11,6 +11,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,7 +23,7 @@ public class BitHelper {
         return ItemStack.areItemsEqual(a, b) && ItemStack.areItemStackTagsEqual(a, b);
     }
     
-    public static ItemStack getBit(ItemStack stack) {
+    public static @Nonnull ItemStack getBit(ItemStack stack) {
         if (stack.getItem() instanceof ItemBlock) {
             Block block = ((ItemBlock) stack.getItem()).getBlock();
             if (block != null) {
@@ -37,10 +38,10 @@ public class BitHelper {
                 }
             }
         }
-        return null;
+        return ItemStack.EMPTY;
     }
 
-    public static ItemStack getBlock(ItemStack stack) {
+    public static @Nonnull ItemStack getBlock(ItemStack stack) {
         if (BitDrawers.cnb_api.getItemType(stack) == ItemType.CHISLED_BIT) {
             IBitBrush bitBrush = null;
             try {
@@ -56,24 +57,24 @@ public class BitHelper {
                 }
             }
         }
-        return null;
+        return ItemStack.EMPTY;
     }
     
-    public static ItemStack getMonochrome(ItemStack source, IBitBrush brush) {
+    public static @Nonnull ItemStack getMonochrome(ItemStack source, IBitBrush brush) {
         boolean set = BitDrawers.cnb_api.getItemType(source) == ItemType.NEGATIVE_DESIGN;
         BitHelper.BitCopy visitor;
         try {
             visitor = new BitHelper.BitCopy(BitDrawers.cnb_api.createBitItem(source), brush, set);
         } catch (APIExceptions.InvalidBitItem e) {
-            return null;
+            return ItemStack.EMPTY;
         }
         //item = new ItemStack(ChiselsAndBits.getBlocks().getConversion(material.getDefaultState()), 1);
-        IBitAccess resultAccessor = BitDrawers.cnb_api.createBitItem(null);
+        IBitAccess resultAccessor = BitDrawers.cnb_api.createBitItem(ItemStack.EMPTY);
         resultAccessor.visitBits(visitor);
         if (visitor.count == 0)
-            return null;
+            return ItemStack.EMPTY;
         ItemStack item = resultAccessor.getBitsAsItem(ModUtil.getSide(source), ItemType.CHISLED_BLOCK, false);
-        item.stackSize = visitor.count;
+        item.setCount(visitor.count);
         return item;
     }
 
@@ -89,12 +90,12 @@ public class BitHelper {
                 throw new APIExceptions.InvalidBitItem();
             this.source = source;
             this.bit = bit;
-            this.air = BitDrawers.cnb_api.createBrush(null);
+            this.air = BitDrawers.cnb_api.createBrush(ItemStack.EMPTY);
             this.negative = negative;
         }
 
         @Override
-        public IBitBrush visitBit(int x, int y, int z, IBitBrush dummy) {
+        public IBitBrush visitBit(int x, int y, int z, @Nonnull IBitBrush dummy) {
             IBitBrush sourceBit = source.getBitAt(x, y, z);
             if (sourceBit.isAir() == negative) {
                 count++;
@@ -108,7 +109,7 @@ public class BitHelper {
         public Map<Integer, Integer> counts = new HashMap<Integer, Integer>();
 
         @Override
-        public IBitBrush visitBit(int x, int y, int z, IBitBrush brush) {
+        public IBitBrush visitBit(int x, int y, int z, @Nonnull IBitBrush brush) {
             if (!brush.isAir()) {
                 if (!counts.containsKey(brush.getStateID()))
                     counts.put(brush.getStateID(), 0);

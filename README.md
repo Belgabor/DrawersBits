@@ -7,7 +7,7 @@ This mod highly relies on the version of storage drawers, so it can break with a
 ## Bit Drawer
 The Bit Drawer basically works similar to a compacting drawer by automatically converting between bits and the full block. It can only store blocks that can be broken down into bits. Otherwise it acts as any drawer, aka it can be part of a drawer controller network, accepts upgrades and can be locked etc.
 
-A small warning, since a block has 4096 bits the drawer gets close to how much can be reasonably stored internally in a number. With default settings you are fine, but if you upgrade the storage capacity of the bit drawer or upgrades in the config, you will rapidly hit the limit (at 8191 stacks à 64 blocks).
+A small warning, since a block has 4096 bits the drawer gets close to how many items Storage Drawers internally supports. With default settings you are fine, but if you upgrade the storage capacity of the bit drawer or upgrades in the config, you will rapidly hit the limit (at 8191 stacks à 64 blocks).
 
 ### Special Interactions
 For now all of these only work when manually interacting with the bit drawer. Sneak/non-sneak left-click behaviour will be inverted if the respective option is set for Storage Drawers.

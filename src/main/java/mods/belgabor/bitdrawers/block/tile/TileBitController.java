@@ -26,12 +26,13 @@ import net.minecraft.world.ILockableContainer;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
  * Created by Belgabor on 24.07.2016.
  */
-public class TileBitController extends TileEntityController implements IProtectable {
+public class TileBitController extends TileEntityController /*implements IProtectable*/ {
     protected Map<Integer, List<SlotRecord>> drawerBitLookup = new HashMap<>();
     private String securityKey;
     
@@ -42,7 +43,7 @@ public class TileBitController extends TileEntityController implements IProtecta
         ItemStack currentStack = player.inventory.getCurrentItem();
         
         if (!BitDrawers.config.allowBagMultiInsertion) {
-            if (currentStack != null) {
+            if (!currentStack.isEmpty()) {
                 count = insertBagItems(currentStack, player.getGameProfile());
             }
             if (count < 0)
@@ -53,10 +54,10 @@ public class TileBitController extends TileEntityController implements IProtecta
 
         if (!BitDrawers.config.allowChiseledBlockMultiInsertion) {
             currentStack = player.inventory.getCurrentItem();
-            if (currentStack != null) {
+            if (!currentStack.isEmpty()) {
                 count = insertChiseledBlocks(currentStack, player.getGameProfile());
-                if(currentStack.stackSize == 0) {
-                    player.inventory.setInventorySlotContents(player.inventory.currentItem, (ItemStack)null);
+                if(currentStack.getCount() == 0) {
+                    player.inventory.setInventorySlotContents(player.inventory.currentItem, ItemStack.EMPTY);
                 }
             }
             if (count < 0)
@@ -68,7 +69,7 @@ public class TileBitController extends TileEntityController implements IProtecta
 
     @Override
     protected int insertItems(ItemStack stack, GameProfile profile) {
-        if (stack == null)
+        if (stack.isEmpty())
             return 0;
         
         int count = -1;
@@ -81,7 +82,7 @@ public class TileBitController extends TileEntityController implements IProtecta
         if (count < 0) {
             count = super.insertItems(stack, profile);
             
-            if (stack.stackSize > 0 && BitDrawers.config.allowChiseledBlockMultiInsertion)
+            if ((!stack.isEmpty()) && BitDrawers.config.allowChiseledBlockMultiInsertion)
                 count = insertChiseledBlocks(stack, profile);
         }
         
@@ -93,19 +94,19 @@ public class TileBitController extends TileEntityController implements IProtecta
         int count = 0;
         if (BitDrawers.config.debugTrace)
             BDLogger.info("TileBitController:insertBagItems %s", stack==null?"null":stack.getDisplayName());
-        if (stack != null && stack.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
+        if ((!stack.isEmpty()) && stack.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
             IItemHandler handler = stack.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
             for(int i = 0; i < handler.getSlots(); i++) {
                 while (true) {
                     ItemStack extract = handler.extractItem(i, 64, true);
-                    if (extract == null)
+                    if (extract.isEmpty())
                         break;
-                    int extracted = extract.stackSize;
+                    int extracted = extract.getCount();
                     int inserted = insertItems(extract, profile);
                     if (inserted > 0) {
                         count += inserted;
                         ItemStack test = handler.extractItem(i, inserted, false);
-                        if (test.stackSize < inserted)
+                        if (test.getCount() < inserted)
                             BDLogger.error("Could not extract simulated amount from bag. Something went very wrong.");
                     }
                     if (inserted < extracted)
@@ -120,10 +121,10 @@ public class TileBitController extends TileEntityController implements IProtecta
         return count;
     }
     
-    protected int insertChiseledBlocks(ItemStack stack, GameProfile profile) {
+    protected int insertChiseledBlocks(@Nonnull ItemStack stack, GameProfile profile) {
         if (BitDrawers.config.debugTrace)
-            BDLogger.info("TileBitController:insertChiseledBlocks %s", stack==null?"null":stack.getDisplayName());
-        if (stack == null)
+            BDLogger.info("TileBitController:insertChiseledBlocks %s", stack.isEmpty()?"EMPTY":stack.getDisplayName());
+        if (stack.isEmpty())
             return 0;
         if (BitDrawers.cnb_api.getItemType(stack) == ItemType.CHISLED_BLOCK) {
             IBitAccess access = BitDrawers.cnb_api.createBitItem(stack);
@@ -147,7 +148,7 @@ public class TileBitController extends TileEntityController implements IProtecta
                     if (!(group instanceof IProtectable) || SecurityManager.hasAccess(profile, (IProtectable) group)) {
                         IDrawer drawer = this.getDrawer(slot);
                         ItemStack itemProto = drawer.getStoredItemPrototype();
-                        if (itemProto == null) {
+                        if (itemProto.isEmpty()) {
                             break;
                         }
 
@@ -167,7 +168,7 @@ public class TileBitController extends TileEntityController implements IProtecta
             });
             
             OptionalInt test = data.stream().mapToInt(x -> x.canStoreItems).min();
-            final int maxItems = Math.min(test.isPresent()?test.getAsInt():0, stack.stackSize);
+            final int maxItems = Math.min(test.isPresent()?test.getAsInt():0, stack.getCount());
             
             if (maxItems == 0) {
                 if (BitDrawers.config.debugTrace)
@@ -193,7 +194,7 @@ public class TileBitController extends TileEntityController implements IProtecta
             if (left.isPresent() && left.getAsInt() > 0) {
                 BDLogger.error("Couldn't store bits when inserting chiseled block. This is not supposed to happen at this point.");
             }
-            stack.stackSize -= maxItems;
+            stack.shrink(maxItems);
             return maxItems;
         } else {
             return -1;
@@ -218,7 +219,6 @@ public class TileBitController extends TileEntityController implements IProtecta
     
     protected void rebuildBitLookup (Map<Integer, List<SlotRecord>> lookup, List<SlotRecord> records) {
         lookup.clear();
-        boolean invBased = false;
 
         for (int i = 0; i < records.size(); i++) {
             SlotRecord record = records.get(i);
@@ -226,7 +226,7 @@ public class TileBitController extends TileEntityController implements IProtecta
             if (group == null)
                 continue;
 
-            int drawerSlot = (invBased) ? group.getDrawerInventory().getDrawerSlot(record.slot) : record.slot;
+            int drawerSlot = record.slot;
             if (!group.isDrawerEnabled(drawerSlot))
                 continue;
 
@@ -275,12 +275,12 @@ public class TileBitController extends TileEntityController implements IProtecta
                 int addSlot = -1;
                 for (int i = 0; i < bag.getSlots(); i++) {
                     ItemStack test = bag.getStackInSlot(i);
-                    if (test == null) {
+                    if (test.isEmpty()) {
                         if (addSlot == -1)
                             addSlot = i;
                         continue;
                     }
-                    if (test.stackSize < bag.getBitbagStackSize() && BitHelper.areItemsEqual(test, bit)) {
+                    if (test.getCount() < bag.getBitbagStackSize() && BitHelper.areItemsEqual(test, bit)) {
                         addSlot = i;
                         break;
                     }
@@ -302,29 +302,29 @@ public class TileBitController extends TileEntityController implements IProtecta
     
     protected int fillBagSlot(IBitBag bag, int slot, IDrawer drawer) {
         if (BitDrawers.config.debugTrace)
-            BDLogger.info("TileBitController:fillBagSlot %d %s", slot, drawer.getStoredItemPrototype()==null?"null":drawer.getStoredItemPrototype().getDisplayName());
+            BDLogger.info("TileBitController:fillBagSlot %d %s", slot, drawer.getStoredItemPrototype().isEmpty()?"EMPTY":drawer.getStoredItemPrototype().getDisplayName());
         if (drawer.getStoredItemCount() == 0)
             return 0;
         
         int toAdd = bag.getBitbagStackSize();
         ItemStack item = bag.getStackInSlot(slot);
-        if (item != null)
-            toAdd -= item.stackSize;
+        if (!item.isEmpty())
+            toAdd -= item.getCount();
         item = drawer.getStoredItemPrototype().copy();
-        item.stackSize = toAdd;
+        item.setCount(toAdd);
         ItemStack test = bag.insertItem(slot, item.copy(), true);
-        if (test != null) {
-            toAdd -= test.stackSize;
+        if (!test.isEmpty()) {
+            toAdd -= test.getCount();
         }
         if (toAdd == 0)
             return 0;
         
         toAdd = Math.min(toAdd, drawer.getStoredItemCount());
         drawer.setStoredItemCount(drawer.getStoredItemCount() - toAdd);
-        item.stackSize = toAdd;
+        item.setCount(toAdd);
         test = bag.insertItem(slot, item, false);
-        if (test != null) {
-            if (test.stackSize != 0) {
+        if (!test.isEmpty()) {
+            if (!test.isEmpty()) {
                 BDLogger.error("Could not insert simulated bit amount into bag. Something went very wrong.");
             }
         }
@@ -332,7 +332,7 @@ public class TileBitController extends TileEntityController implements IProtecta
         return toAdd;
     }
     
-    public ItemStack retrieveByPattern(ItemStack pattern, EntityPlayer player, boolean getStack) {
+    public @Nonnull ItemStack retrieveByPattern(ItemStack pattern, EntityPlayer player, boolean getStack) {
         if (BitDrawers.config.debugTrace)
             BDLogger.info("TileBitController:retrieveByPattern");
         IBitAccess source = BitDrawers.cnb_api.createBitItem(pattern);
@@ -341,7 +341,7 @@ public class TileBitController extends TileEntityController implements IProtecta
         //updateCache();
         
         if (source == null)
-            return null;
+            return ItemStack.EMPTY;
         
         BitHelper.BitCounter counter = new BitHelper.BitCounter();
         source.visitBits(counter);
@@ -377,24 +377,25 @@ public class TileBitController extends TileEntityController implements IProtecta
             int m = count / counter.counts.get(blockStateID);
             if (m == 0 && BitDrawers.config.chatty) {
                 ItemStack desc = (new BitBrush(blockStateID)).getItemStack(1);
-                player.addChatComponentMessage(new TextComponentTranslation("chat.notEnough", desc==null?"Unknown":desc.getDisplayName()));
+                //player.addChatComponentMessage(new TextComponentTranslation("chat.notEnough", desc==null?"Unknown":desc.getDisplayName()));
+                player.sendStatusMessage(new TextComponentTranslation("chat.notEnough", desc==null?"Unknown":desc.getDisplayName()), false);
             }
             max[0] = Math.min(max[0], m);
         });
         
         int toExtract = Math.min(max[0], getStack?64:1);
         if (toExtract == 0)
-            return null;
+            return ItemStack.EMPTY;
 
         ItemStack stack = source.getBitsAsItem(ModUtil.getSide(pattern), ItemType.CHISLED_BLOCK, false);
-        stack.stackSize = toExtract;
+        stack.setCount(toExtract);
         Integer[] temp = new Integer[1];
 
         counter.counts.forEach((blockStateID, count) -> {
             temp[0] = count * toExtract;
             List<SlotRecord> records = drawerBitLookup.get(blockStateID);
             if (records == null) {
-                stack.stackSize = 0;
+                stack.setCount(0);
                 return;
             }
             records.stream().forEachOrdered(slotRecord -> {
@@ -406,12 +407,12 @@ public class TileBitController extends TileEntityController implements IProtecta
                 }
             });
             if (temp[0] > 0)
-                stack.stackSize = 0;
+                stack.setCount(0);
         });
         
-        if (stack.stackSize == 0) {
+        if (stack.isEmpty()) {
             BDLogger.error("Could not extract simulated bit for block. Something went very wrong.");
-            return null;
+            return ItemStack.EMPTY;
         }
         return stack;
     }
@@ -436,6 +437,7 @@ public class TileBitController extends TileEntityController implements IProtecta
         return tag;
     }
 
+    /* IPorotectable stuff
     @Override
     public UUID getOwner() {
         return null;
@@ -465,16 +467,17 @@ public class TileBitController extends TileEntityController implements IProtecta
         if ((newKey != null && !newKey.equals(securityKey)) || (securityKey != null && !securityKey.equals(newKey))) {
             securityKey = newKey;
 
-            if (worldObj != null && !worldObj.isRemote) {
+            if (getWorld() != null && !getWorld().isRemote) {
                 markDirty();
 
-                IBlockState state = worldObj.getBlockState(getPos());
-                worldObj.notifyBlockUpdate(getPos(), state, state, 3);
+                IBlockState state = getWorld().getBlockState(getPos());
+                getWorld().notifyBlockUpdate(getPos(), state, state, 3);
             }
         }
 
         return true;
     }
+    */
 
     protected static class BitCollectorData {
         protected final int count;

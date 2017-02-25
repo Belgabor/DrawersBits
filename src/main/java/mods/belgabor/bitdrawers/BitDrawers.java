@@ -26,15 +26,17 @@ import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-@Mod(modid = BitDrawers.MODID, version = BitDrawers.VERSION, name = BitDrawers.MODNAME, dependencies = "required-after:chiselsandbits@[11.6,);required-after:StorageDrawers@[1.10.2-"+BitDrawers.SD_VERSION+",);required-after:Chameleon")
+import java.io.File;
+
+@Mod(modid = BitDrawers.MODID, version = BitDrawers.VERSION, name = BitDrawers.MODNAME, dependencies = "required-after:chiselsandbits@[11.6,);required-after:storagedrawers@[1.11.2-"+BitDrawers.SD_VERSION+",);required-after:chameleon")
 @ChiselsAndBitsAddon
 public class BitDrawers implements IChiselsAndBitsAddon
 {
     public static final String MODNAME = "Drawers & Bits";
     public static final String MODID = "bitdrawers";
-    public static final String VERSION = "0.35";
-    public static final String SD_VERSION = "3.5.5";
-    public static final int[] SD_VERSIONS = {3, 5, 5};
+    public static final String VERSION = "0.4";
+    public static final String SD_VERSION = "4.1.0";
+    public static final int[] SD_VERSIONS = {4, 1, 0};
     
     @SidedProxy(
             clientSide = "mods.belgabor.bitdrawers.client.ClientProxy",
@@ -59,7 +61,7 @@ public class BitDrawers implements IChiselsAndBitsAddon
     public void preInit(FMLPreInitializationEvent event)
     {
         BDLogger.logger = event.getModLog();
-        config = new ConfigManager(event.getSuggestedConfigurationFile());
+        config = new ConfigManager(new File(event.getModConfigurationDirectory(), "DrawersBits.cfg"));
         network = NetworkRegistry.INSTANCE.newSimpleChannel(MODID);
         blocks.init();
         proxy.initClient();
@@ -72,7 +74,7 @@ public class BitDrawers implements IChiselsAndBitsAddon
         else {
             network.registerMessage(CountUpdateMessage.HandlerStub.class, CountUpdateMessage.class, 1, Side.CLIENT);
         }
-
+        
         ModContainer testContainer = Loader.instance().getIndexedModList().get("StorageDrawers");
         if (testContainer != null) {
             String[] testVersion = testContainer.getDisplayVersion().split("-");
@@ -107,6 +109,7 @@ public class BitDrawers implements IChiselsAndBitsAddon
         recipes.init();
     }
     
+    /*
     @SubscribeEvent
     @SideOnly( Side.CLIENT )
     public void openMainMenu(final GuiOpenEvent event ) {
@@ -115,6 +118,7 @@ public class BitDrawers implements IChiselsAndBitsAddon
             event.setGui(new GuiScreenStartup());
         }
     }
+    */
     
     @Override
     public void onReadyChiselsAndBits(IChiselAndBitsAPI api) {

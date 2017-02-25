@@ -24,7 +24,7 @@ public class BlockRegistry {
     public static BlockBitController bitController;
     
     public void init() {
-        bitDrawer = new BlockBitDrawers("bitdrawer");
+        bitDrawer = new BlockBitDrawers("bitdrawer", "bitdrawer");
         GameRegistry.register(bitDrawer);
         GameRegistry.register((new ItemBitDrawer(bitDrawer)).setRegistryName(bitDrawer.getRegistryName()));
         GameRegistry.registerTileEntity(TileBitDrawers.class, bitDrawer.getRegistryName().toString());
