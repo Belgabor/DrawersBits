@@ -307,15 +307,19 @@ public class TileBitDrawers extends TileEntityDrawers
 
     }
     
-    private void populateSlot (int slot, ItemStack stack, int conversion) {
+    private void populateSlot (int slot, @Nonnull ItemStack stack, int conversion) {
         convRate[slot] = conversion;
-        protoStack[slot] = stack==null?null:stack.copy();
+        protoStack[slot] = stack.copy();
         //centralInventory.setStoredItem(slot, stack, 0);
         //getDrawer(slot).setStoredItem(stack, 0);
+        
+        /*
         if (getWorld() != null && !getWorld().isRemote) {
             IBlockState state = getWorld().getBlockState(getPos());
             getWorld().notifyBlockUpdate(getPos(), state, state, 3);
         }
+        */
+        markBlockForUpdate();
     }
     
     private class BitCentralInventory implements ICentralInventory
@@ -337,10 +341,11 @@ public class TileBitDrawers extends TileEntityDrawers
         }
         
         @Override
-        public IDrawer setStoredItem (int slot, ItemStack itemPrototype, int amount) {
+        public IDrawer setStoredItem (int slot, @Nonnull ItemStack itemPrototype, int amount) {
+            boolean itemValid = !itemPrototype.isEmpty();
             if (BitDrawers.config.debugTrace)
-                BDLogger.info("setStoredItem %d %s %d", slot, itemPrototype==null?"null":itemPrototype.getDisplayName(), amount);
-            if ((!itemPrototype.isEmpty()) && convRate != null && convRate[0] == 0) {
+                BDLogger.info("setStoredItem %d %s %d", slot, itemPrototype.isEmpty()?"EMPTY":itemPrototype.getDisplayName(), amount);
+            if (itemValid && convRate != null && convRate[0] == 0) {
                 populateSlots(itemPrototype);
                 for (int i = 0; i < getDrawerCount(); i++) {
                     if (BaseDrawerData.areItemsEqual(protoStack[i], itemPrototype))
@@ -356,13 +361,17 @@ public class TileBitDrawers extends TileEntityDrawers
                         ((BitDrawerData) drawer).refresh();
                 }
 
+                /*
                 if (getWorld() != null && !getWorld().isRemote) {
                     IBlockState state = getWorld().getBlockState(getPos());
                     getWorld().notifyBlockUpdate(getPos(), state, state, 3);
                 }
+                */
+                markBlockForUpdate();
             }
-            else if (itemPrototype.isEmpty()) {
+            else if (!itemValid && isDrawerEnabled(slot)) {
                 setStoredItemCount(slot, 0);
+                markBlockForUpdate();
             }
             return getDrawer(slot);
         }
@@ -401,10 +410,13 @@ public class TileBitDrawers extends TileEntityDrawers
                     markAmountDirty();
                 else {
                     clear();
+                    markBlockForUpdate();
+                    /*
                     if (getWorld() != null && !getWorld().isRemote) {
                         IBlockState state = getWorld().getBlockState(getPos());
                         getWorld().notifyBlockUpdate(getPos(), state, state, 3);
                     }
+                    */
                 }
             }
         }
@@ -589,11 +601,14 @@ public class TileBitDrawers extends TileEntityDrawers
         }
 
         public void markDirty (int slot) {
+            markBlockForUpdate();
+            /*
             if (getWorld().isRemote)
                 return;
 
             IBlockState state = getWorld().getBlockState(getPos());
             getWorld().notifyBlockUpdate(getPos(), state, state, 3);
+            */
         }
     }
 
