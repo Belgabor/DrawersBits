@@ -50,7 +50,7 @@ public class TileBitDrawers extends TileEntityDrawers
         protoStack = new ItemStack[getDrawerCount()];
         convRate = new int[getDrawerCount()];
     }
-
+    
     protected ICentralInventory getCentralInventory () {
         if (centralInventory == null)
             centralInventory = new BitCentralInventory();
@@ -313,7 +313,8 @@ public class TileBitDrawers extends TileEntityDrawers
             getWorld().notifyBlockUpdate(getPos(), state, state, 3);
         }
     }
-    
+
+
     private class BitCentralInventory implements ICentralInventory
     {
         @Override

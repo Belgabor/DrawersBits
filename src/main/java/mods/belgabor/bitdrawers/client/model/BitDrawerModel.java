@@ -22,6 +22,8 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 import net.minecraftforge.common.property.IExtendedBlockState;
 import net.minecraftforge.common.util.Constants;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +33,7 @@ import java.util.List;
  * Based on CompDrawerModel by jaquadro
  */
 
+@SideOnly(Side.CLIENT)
 public final class BitDrawerModel
 {
     public static class Register extends DefaultRegister

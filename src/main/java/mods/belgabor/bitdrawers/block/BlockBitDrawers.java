@@ -106,10 +106,12 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
             return 2;
     }
     
+    /*
     @Override
-    public IBlockState onBlockPlaced (World world, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer) {
+    public IBlockState onBlockPlacedBy (World world, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer) {
         return getDefaultState();
     }
+    */
 
     @Override
     public BlockType retrimType () {
@@ -310,7 +312,7 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
     protected void dropItemStack (World world, BlockPos pos, EntityPlayer player, ItemStack stack) {
         EntityItem entity = new EntityItem(world, pos.getX() + .5f, pos.getY() + .1f, pos.getZ() + .5f, stack);
         entity.addVelocity(-entity.motionX, -entity.motionY, -entity.motionZ);
-        world.spawnEntityInWorld(entity);
+        world.spawnEntity(entity);
     }
     
     protected int fillBagSlot(IBitBag bag, int slot, IDrawer drawer, TileEntityDrawers tileDrawers) {

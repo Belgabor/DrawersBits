@@ -1,7 +1,6 @@
 package mods.belgabor.bitdrawers.block;
 
 import com.jaquadro.minecraft.storagedrawers.block.BlockController;
-import com.jaquadro.minecraft.storagedrawers.block.IBlockDestroyHandler;
 import com.jaquadro.minecraft.storagedrawers.config.ConfigManager;
 import com.jaquadro.minecraft.storagedrawers.config.PlayerConfigSetting;
 import com.jaquadro.minecraft.storagedrawers.security.SecurityManager;
@@ -133,6 +132,6 @@ public class BlockBitController extends BlockController /*implements IBlockDestr
     protected void dropItemStack (World world, BlockPos pos, EntityPlayer player, ItemStack stack) {
         EntityItem entity = new EntityItem(world, pos.getX() + .5f, pos.getY() + .1f, pos.getZ() + .5f, stack);
         entity.addVelocity(-entity.motionX, -entity.motionY, -entity.motionZ);
-        world.spawnEntityInWorld(entity);
+        world.spawnEntity(entity);
     }
 }

@@ -377,7 +377,7 @@ public class TileBitController extends TileEntityController implements IProtecta
             int m = count / counter.counts.get(blockStateID);
             if (m == 0 && BitDrawers.config.chatty) {
                 ItemStack desc = (new BitBrush(blockStateID)).getItemStack(1);
-                player.addChatComponentMessage(new TextComponentTranslation("chat.notEnough", desc==null?"Unknown":desc.getDisplayName()));
+                player.sendMessage(new TextComponentTranslation("chat.notEnough", desc==null?"Unknown":desc.getDisplayName()));
             }
             max[0] = Math.min(max[0], m);
         });
@@ -465,11 +465,11 @@ public class TileBitController extends TileEntityController implements IProtecta
         if ((newKey != null && !newKey.equals(securityKey)) || (securityKey != null && !securityKey.equals(newKey))) {
             securityKey = newKey;
 
-            if (worldObj != null && !worldObj.isRemote) {
+            if (this.getWorld() != null && !this.getWorld().isRemote) {
                 markDirty();
 
-                IBlockState state = worldObj.getBlockState(getPos());
-                worldObj.notifyBlockUpdate(getPos(), state, state, 3);
+                IBlockState state = this.getWorld().getBlockState(getPos());
+                this.getWorld().notifyBlockUpdate(getPos(), state, state, 3);
             }
         }
 

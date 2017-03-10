@@ -32,9 +32,9 @@ public class BitDrawers implements IChiselsAndBitsAddon
 {
     public static final String MODNAME = "Drawers & Bits";
     public static final String MODID = "bitdrawers";
-    public static final String VERSION = "0.35";
-    public static final String SD_VERSION = "3.5.5";
-    public static final int[] SD_VERSIONS = {3, 5, 5};
+    public static final String VERSION = "0.36";
+    public static final String SD_VERSION = "3.6.1";
+    public static final int[] SD_VERSIONS = {3, 6, 1};
     
     @SidedProxy(
             clientSide = "mods.belgabor.bitdrawers.client.ClientProxy",
@@ -107,6 +107,7 @@ public class BitDrawers implements IChiselsAndBitsAddon
         recipes.init();
     }
     
+    /*
     @SubscribeEvent
     @SideOnly( Side.CLIENT )
     public void openMainMenu(final GuiOpenEvent event ) {
@@ -115,6 +116,7 @@ public class BitDrawers implements IChiselsAndBitsAddon
             event.setGui(new GuiScreenStartup());
         }
     }
+    */
     
     @Override
     public void onReadyChiselsAndBits(IChiselAndBitsAPI api) {
