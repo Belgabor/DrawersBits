@@ -1,6 +1,7 @@
 # Changelog
 
 ## Version 0.36
+* [CHANGED] Require Forge 12.18.3.2221. Weird issues occurred with earlier versions.
 * [FIXED] Display bug with SD 3.6.1+
 * [REMOVED] Warning in GUI if Storage Drawers version differs from the one targeted is gone, wasn't serving it's purpose. There is still a warning in the log, but usually MC crashes before it reaches that point
 
