@@ -11,6 +11,7 @@ import com.jaquadro.minecraft.storagedrawers.config.ConfigManager;
 import com.jaquadro.minecraft.storagedrawers.config.PlayerConfigSetting;
 import com.jaquadro.minecraft.storagedrawers.inventory.DrawerInventoryHelper;
 import com.jaquadro.minecraft.storagedrawers.security.SecurityManager;
+import mcp.MethodsReturnNonnullByDefault;
 import mod.chiselsandbits.api.APIExceptions;
 import mod.chiselsandbits.api.IBitBag;
 import mod.chiselsandbits.api.IBitBrush;
@@ -45,6 +46,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 import java.util.Map;
 
@@ -105,6 +107,8 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
     }
     
     @Override
+    @MethodsReturnNonnullByDefault
+    @ParametersAreNonnullByDefault
     public IBlockState getStateForPlacement (World world, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer, EnumHand hand) {
         return getDefaultState();
     }
@@ -116,6 +120,7 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
     }
 
     @Override
+    @ParametersAreNonnullByDefault
     public TileEntityDrawers createNewTileEntity (World world, int meta) {
         return new TileBitDrawers();
     }
@@ -136,6 +141,7 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
     }
 
     @Override
+    @MethodsReturnNonnullByDefault
     protected BlockStateContainer createBlockState () {
         return new ExtendedBlockState(this, new IProperty[] { SLOTS, FACING }, new IUnlistedProperty[] { STATE_MODEL });
     }
@@ -187,6 +193,9 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
             BDLogger.info("IExtendedBlockClickHandler.onBlockClicked");
         
         RayTraceResult rayResult = net.minecraftforge.common.ForgeHooks.rayTraceEyes(player, ((EntityPlayerMP) player).interactionManager.getBlockReachDistance() + 1);
+        if (rayResult == null)
+            return;
+        
         EnumFacing side = rayResult.sideHit;
         // adjust hitVec for drawers
         float hitX = (float)(rayResult.hitVec.xCoord - pos.getX());
@@ -215,17 +224,17 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
         int slot = getDrawerSlot(getDrawerCount(world.getBlockState(pos)), side.ordinal(), hitX, hitY, hitZ);
         IDrawer drawer = tileDrawers.getDrawer(slot);
 
-        ItemStack item;
+        ItemStack item/* = ItemStack.EMPTY*/;
 
         ItemStack held = player.inventory.getCurrentItem();
         if (BitDrawers.config.debugTrace)
-            BDLogger.info("  Player %s", held==null?"does not hold an item":"is holding an item");
+            BDLogger.info("  Player %s", held.isEmpty()?"does not hold an item":"is holding an item");
         ItemType heldType = BitDrawers.cnb_api.getItemType(held);
         IItemHandler handler = held.isEmpty()?null:held.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
         if (handler instanceof IBitBag) {
             IBitBag bag = (IBitBag) handler;
             drawer = tileDrawers.getDrawer(1);
-            if (drawer.getStoredItemPrototype() == null)
+            if (drawer.getStoredItemPrototype().isEmpty())
                 return;
             int retrieved = 0;
             if (player.isSneaking() != invertShift) {
@@ -256,9 +265,9 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
                     retrieved = fillBagSlot(bag, addSlot, drawer, tileDrawers);
                 }
             }
-            if (retrieved > 0 && !world.isRemote)
+            if (retrieved > 0)
                 world.playSound(null, pos.getX() + .5f, pos.getY() + .5f, pos.getZ() + .5f, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, .2f, ((world.rand.nextFloat() - world.rand.nextFloat()) * .7f + 1) * 2);
-            item = null;
+            item = ItemStack.EMPTY;
         } else if (slot == 1 && heldType != null && heldType.isBitAccess) {
             ItemStack bit = drawer.getStoredItemPrototype();
             if (bit.isEmpty())
@@ -300,7 +309,7 @@ public class BlockBitDrawers extends BlockDrawers implements INetworked
                 dropItemStack(world, pos.offset(side), player, item);
                 world.notifyBlockUpdate(pos, state, state, 3);
             }
-            else if (!world.isRemote)
+            else
                 world.playSound(null, pos.getX() + .5f, pos.getY() + .5f, pos.getZ() + .5f, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, .2f, ((world.rand.nextFloat() - world.rand.nextFloat()) * .7f + 1) * 2);
         }
 

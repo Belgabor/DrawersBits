@@ -27,8 +27,9 @@ public class ItemBitController extends ItemBlock implements IItemMeshMapper {
     }
     
     @SideOnly(Side.CLIENT)
-    public void addInformation(ItemStack itemStack, EntityPlayer player, List list, boolean advanced) {
-        list.add(I18n.format("bitdrawers.bitcontroller.description"));
+    public void addInformation(@Nullable ItemStack itemStack, @Nullable EntityPlayer player, @Nullable List list, boolean advanced) {
+        if (list != null)
+            list.add(I18n.format("bitdrawers.bitcontroller.description"));
     }
 
     @Override

@@ -27,7 +27,7 @@ public class PlayerEventHandler {
         if ( event.getEntityPlayer() != null && event.getUseItem() != Event.Result.DENY )
         {
             final ItemStack is = event.getItemStack();
-            if ( is != null && (is.getItem() instanceof ItemChiseledBit) && event.getWorld().isRemote)
+            if ( (!is.isEmpty()) && (is.getItem() instanceof ItemChiseledBit) && event.getWorld().isRemote)
             {
                 Block target = event.getWorld().getBlockState(event.getPos()).getBlock();
                 if (target instanceof BlockBitDrawers) {

@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.41
+* [FIXED] NPE in player interaction with the bit drawer
+* [FIXED] Redstone update issue with the redstone upgrade
+* [MISC] Code cleanup
+
 ## Version 0.4
 * [UPDATED] to 1.11.2
 * [CHANGED] Config file name now matches the mod's file name instead of the internal mod id.

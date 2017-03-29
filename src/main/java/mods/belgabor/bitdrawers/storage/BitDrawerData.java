@@ -45,17 +45,6 @@ public class BitDrawerData extends BaseDrawerData implements IFractionalDrawer, 
         return target;
     }
 
-    /*
-    @Override
-    public IDrawer setStoredItemRedir (ItemStack itemPrototype, int amount) {
-        IDrawer target = central.setStoredItem(slot, itemPrototype, amount);
-        refresh();
-
-        return target;
-    }
-    */
-
-
     @Override
     public boolean areItemsEqual(@Nonnull ItemStack item) {
         ItemStack protoStack = this.getStoredItemPrototype();

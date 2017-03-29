@@ -24,6 +24,8 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.commons.lang3.tuple.Pair;
 
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,6 +46,7 @@ public class ItemBitDrawer extends ItemBlock implements IItemMeshMapper, IItemVa
     }
 
     @Override
+    @ParametersAreNonnullByDefault
     public boolean placeBlockAt (ItemStack stack, EntityPlayer player, World world, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ, IBlockState newState) {
         if (!super.placeBlockAt(stack, player, world, pos, side, hitX, hitY, hitZ, newState))
             return false;
@@ -67,12 +70,15 @@ public class ItemBitDrawer extends ItemBlock implements IItemMeshMapper, IItemVa
 
     @Override
     @SideOnly(Side.CLIENT)
-    public void addInformation (ItemStack itemStack, EntityPlayer player, List<String> list, boolean par4) {
+    public void addInformation (@Nullable ItemStack itemStack, @Nullable EntityPlayer player, @Nullable List<String> list, boolean par4) {
+        if (list == null)
+            return;
+        
         ConfigManager config = BitDrawers.config;
 
         list.add(I18n.translateToLocalFormatted("storageDrawers.drawers.description", config.bitdrawerStorage));
 
-        if (itemStack.hasTagCompound() && itemStack.getTagCompound().hasKey("tile")) {
+        if ((itemStack != null) && itemStack.hasTagCompound() && itemStack.getTagCompound().hasKey("tile")) {
             list.add(ChatFormatting.YELLOW + I18n.translateToLocal("storageDrawers.drawers.sealed"));
         }
     }
@@ -82,8 +88,9 @@ public class ItemBitDrawer extends ItemBlock implements IItemMeshMapper, IItemVa
         ResourceLocation location = GameData.getItemRegistry().getNameForObject(this);
         List<ResourceLocation> variants = new ArrayList<ResourceLocation>();
 
-        for (EnumCompDrawer type : EnumCompDrawer.values())
-            variants.add(new ResourceLocation(location.getResourceDomain(), location.getResourcePath() + '_' + type.getName()));
+        if (location != null)
+            for (EnumCompDrawer type : EnumCompDrawer.values())
+                variants.add(new ResourceLocation(location.getResourceDomain(), location.getResourcePath() + '_' + type.getName()));
 
         return variants;
     }

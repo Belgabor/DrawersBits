@@ -25,6 +25,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Map;
 
 /**
@@ -47,6 +48,7 @@ public class BlockBitController extends BlockController /*implements IBlockDestr
     }
 
     @Override
+    @ParametersAreNonnullByDefault
     public boolean removedByPlayer (IBlockState state, World world, BlockPos pos, EntityPlayer player, boolean willHarvest) {
         if (player.capabilities.isCreativeMode) {
             float blockReachDistance = 0;
@@ -57,6 +59,8 @@ public class BlockBitController extends BlockController /*implements IBlockDestr
             }
 
             RayTraceResult rayResult = net.minecraftforge.common.ForgeHooks.rayTraceEyes(player, blockReachDistance + 1);
+            if (rayResult == null)
+                return false;
             if (getDirection(world, pos) == rayResult.sideHit) {
                 onBlockClicked(world, pos, player);
             } else {
@@ -106,24 +110,24 @@ public class BlockBitController extends BlockController /*implements IBlockDestr
         }
         ItemType heldType = BitDrawers.cnb_api.getItemType(held);
         IItemHandler handler = held.isEmpty()?null:held.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
-        ItemStack item = null;
+        ItemStack item = ItemStack.EMPTY;
         if (handler instanceof IBitBag) {
             IBitBag bag = (IBitBag) handler;
 
             int retrieved = tileDrawers.fillBag(bag, player.getGameProfile());
-            if (retrieved > 0 && !world.isRemote)
+            if (retrieved > 0)
                 world.playSound(null, pos.getX() + .5f, pos.getY() + .5f, pos.getZ() + .5f, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, .2f, ((world.rand.nextFloat() - world.rand.nextFloat()) * .7f + 1) * 2);
-            item = null;
+            item = ItemStack.EMPTY;
         } else if (heldType != null && heldType.isBitAccess && heldType != ItemType.NEGATIVE_DESIGN) {
             item = tileDrawers.retrieveByPattern(held, player, player.isSneaking() != invertShift);
         }
         IBlockState state = world.getBlockState(pos);
-        if (item != null && (!item.isEmpty())) {
+        if (!item.isEmpty()) {
             if (!player.inventory.addItemStackToInventory(item)) {
                 dropItemStack(world, pos.offset(side), player, item);
                 world.notifyBlockUpdate(pos, state, state, 3);
             }
-            else if (!world.isRemote)
+            else
                 world.playSound(null, pos.getX() + .5f, pos.getY() + .5f, pos.getZ() + .5f, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, .2f, ((world.rand.nextFloat() - world.rand.nextFloat()) * .7f + 1) * 2);
         }
 

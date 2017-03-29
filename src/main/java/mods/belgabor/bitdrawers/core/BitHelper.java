@@ -1,5 +1,6 @@
 package mods.belgabor.bitdrawers.core;
 
+import mcp.MethodsReturnNonnullByDefault;
 import mod.chiselsandbits.api.*;
 import mod.chiselsandbits.chiseledblock.ItemBlockChiseled;
 import mod.chiselsandbits.helpers.ModUtil;
@@ -23,7 +24,7 @@ public class BitHelper {
         return ItemStack.areItemsEqual(a, b) && ItemStack.areItemStackTagsEqual(a, b);
     }
     
-    public static @Nonnull ItemStack getBit(ItemStack stack) {
+    public static @Nonnull ItemStack getBit(@Nonnull ItemStack stack) {
         if (stack.getItem() instanceof ItemBlock) {
             Block block = ((ItemBlock) stack.getItem()).getBlock();
             if (block != null) {
@@ -41,7 +42,7 @@ public class BitHelper {
         return ItemStack.EMPTY;
     }
 
-    public static @Nonnull ItemStack getBlock(ItemStack stack) {
+    public static @Nonnull ItemStack getBlock(@Nonnull ItemStack stack) {
         if (BitDrawers.cnb_api.getItemType(stack) == ItemType.CHISLED_BIT) {
             IBitBrush bitBrush = null;
             try {
@@ -60,7 +61,7 @@ public class BitHelper {
         return ItemStack.EMPTY;
     }
     
-    public static @Nonnull ItemStack getMonochrome(ItemStack source, IBitBrush brush) {
+    public static @Nonnull ItemStack getMonochrome(@Nonnull ItemStack source, IBitBrush brush) {
         boolean set = BitDrawers.cnb_api.getItemType(source) == ItemType.NEGATIVE_DESIGN;
         BitHelper.BitCopy visitor;
         try {
@@ -70,6 +71,8 @@ public class BitHelper {
         }
         //item = new ItemStack(ChiselsAndBits.getBlocks().getConversion(material.getDefaultState()), 1);
         IBitAccess resultAccessor = BitDrawers.cnb_api.createBitItem(ItemStack.EMPTY);
+        if (resultAccessor == null)
+            return ItemStack.EMPTY;
         resultAccessor.visitBits(visitor);
         if (visitor.count == 0)
             return ItemStack.EMPTY;
@@ -95,6 +98,7 @@ public class BitHelper {
         }
 
         @Override
+        @MethodsReturnNonnullByDefault
         public IBitBrush visitBit(int x, int y, int z, @Nonnull IBitBrush dummy) {
             IBitBrush sourceBit = source.getBitAt(x, y, z);
             if (sourceBit.isAir() == negative) {
@@ -109,6 +113,7 @@ public class BitHelper {
         public Map<Integer, Integer> counts = new HashMap<Integer, Integer>();
 
         @Override
+        @MethodsReturnNonnullByDefault
         public IBitBrush visitBit(int x, int y, int z, @Nonnull IBitBrush brush) {
             if (!brush.isAir()) {
                 if (!counts.containsKey(brush.getStateID()))

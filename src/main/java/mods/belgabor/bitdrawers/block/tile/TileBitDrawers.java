@@ -8,6 +8,7 @@ import com.jaquadro.minecraft.storagedrawers.inventory.ContainerDrawersComp;
 import com.jaquadro.minecraft.storagedrawers.network.CountUpdateMessage;
 import com.jaquadro.minecraft.storagedrawers.storage.BaseDrawerData;
 import com.jaquadro.minecraft.storagedrawers.storage.ICentralInventory;
+import mcp.MethodsReturnNonnullByDefault;
 import mod.chiselsandbits.api.*;
 import mods.belgabor.bitdrawers.BitDrawers;
 import mods.belgabor.bitdrawers.core.BDLogger;
@@ -27,6 +28,7 @@ import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
 import javax.annotation.Nonnull;
+import javax.annotation.ParametersAreNonnullByDefault;
 
 /**
  * Created by Belgabor on 02.06.2016.
@@ -73,13 +75,16 @@ public class TileBitDrawers extends TileEntityDrawers
     protected IDrawer createDrawer (int slot) {
         return new BitDrawerData(getCentralInventory(), slot);
     }
-    
+
     @Override
+    @MethodsReturnNonnullByDefault
+    @ParametersAreNonnullByDefault
     public Container createContainer (InventoryPlayer playerInventory, EntityPlayer playerIn) {
         return new ContainerDrawersComp(playerInventory, this);
     }
 
     @Override
+    @MethodsReturnNonnullByDefault
     public String getGuiID () {
         return StorageDrawers.MOD_ID + ":compDrawers";
     }
@@ -111,15 +116,17 @@ public class TileBitDrawers extends TileEntityDrawers
         return super.interactPutItemsIntoSlot(slot, player);
     }
     
-    public int interactPutBagIntoSlot(int slot, ItemStack stack) {
+    public int interactPutBagIntoSlot(int slot, @Nonnull ItemStack stack) {
         if (BitDrawers.config.debugTrace)
-            BDLogger.info("TileBitDrawers:interactPutBagIntoSlot %d %s", slot, stack==null?"null":stack.getDisplayName());
+            BDLogger.info("TileBitDrawers:interactPutBagIntoSlot %d %s", slot, stack.isEmpty()?"EMPTY":stack.getDisplayName());
         int added = 0;
         IItemHandler handler = stack.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
         if (handler instanceof IBitBag) {
             slot = 1;
             if (BitDrawers.config.debugTrace)
                 BDLogger.info("TileBitDrawers:interactPutBagIntoSlot Bit Bag detected");
+        } else if (handler == null) {
+            return 0;
         }
         for(int i = 0; i < handler.getSlots(); i++) {
             while (true) {
@@ -162,9 +169,9 @@ public class TileBitDrawers extends TileEntityDrawers
     }
     
     @Override
-    public int putItemsIntoSlot (int slot, ItemStack stack, int count) {
+    public int putItemsIntoSlot (int slot, @Nonnull ItemStack stack, int count) {
         if (BitDrawers.config.debugTrace)
-            BDLogger.info("TileBitDrawers:putItemsIntoSlot %d %s %d", slot, stack==null?"null":stack.getDisplayName(), count);
+            BDLogger.info("TileBitDrawers:putItemsIntoSlot %d %s %d", slot, stack.isEmpty()?"EMPTY":stack.getDisplayName(), count);
         int added = 0;
         if (!stack.isEmpty()) {
             if (BitDrawers.cnb_api.getItemType(stack) == ItemType.CHISLED_BLOCK) {
@@ -189,9 +196,9 @@ public class TileBitDrawers extends TileEntityDrawers
         return added + super.putItemsIntoSlot(slot, stack, count);
     }
     
-    public int putChiseledBlockIntoDrawer (ItemStack stack, int count) {
+    public int putChiseledBlockIntoDrawer (@Nonnull ItemStack stack, int count) {
         if (BitDrawers.config.debugTrace)
-            BDLogger.info("TileBitDrawers:putChiseledBlockIntoDrawer %s %d", stack==null?"null":stack.getDisplayName(), count);
+            BDLogger.info("TileBitDrawers:putChiseledBlockIntoDrawer %s %d", stack.isEmpty()?"EMPTY":stack.getDisplayName(), count);
         count = Math.min(count, stack.getCount());
         IDrawer drawer = getDrawer(1);
         IBitAccess access = BitDrawers.cnb_api.createBitItem(stack);
@@ -310,21 +317,13 @@ public class TileBitDrawers extends TileEntityDrawers
     private void populateSlot (int slot, @Nonnull ItemStack stack, int conversion) {
         convRate[slot] = conversion;
         protoStack[slot] = stack.copy();
-        //centralInventory.setStoredItem(slot, stack, 0);
-        //getDrawer(slot).setStoredItem(stack, 0);
-        
-        /*
-        if (getWorld() != null && !getWorld().isRemote) {
-            IBlockState state = getWorld().getBlockState(getPos());
-            getWorld().notifyBlockUpdate(getPos(), state, state, 3);
-        }
-        */
         markBlockForUpdate();
     }
     
     private class BitCentralInventory implements ICentralInventory
     {
         @Override
+        @Nonnull
         public ItemStack getStoredItemPrototype (int slot) {
             return protoStack[slot];
         }
@@ -411,12 +410,11 @@ public class TileBitDrawers extends TileEntityDrawers
                 else {
                     clear();
                     markBlockForUpdate();
-                    /*
-                    if (getWorld() != null && !getWorld().isRemote) {
-                        IBlockState state = getWorld().getBlockState(getPos());
-                        getWorld().notifyBlockUpdate(getPos(), state, state, 3);
-                    }
-                    */
+                }
+                if (!getWorld().isRemote && isRedstone()) {
+                    IBlockState state = getWorld().getBlockState(getPos());
+                    getWorld().notifyNeighborsOfStateChange(getPos(), state.getBlock(), false);
+                    getWorld().notifyNeighborsOfStateChange(getPos().down(), state.getBlock(), false);
                 }
             }
         }
@@ -436,7 +434,7 @@ public class TileBitDrawers extends TileEntityDrawers
         }
 
         @Override
-        public int getMaxCapacity (int slot, ItemStack itemPrototype) {
+        public int getMaxCapacity (int slot, @Nonnull ItemStack itemPrototype) {
             if (itemPrototype.isEmpty() || itemPrototype.getItem() == null)
                 return 0;
 
@@ -628,19 +626,22 @@ public class TileBitDrawers extends TileEntityDrawers
         }
 
         @Override
+        @MethodsReturnNonnullByDefault
         public ItemStack getStackInSlot (int slot)
         {
             return slot >= this.getSizeInventory() ? null : this.stackList[slot];
         }
 
         @Override
+        @MethodsReturnNonnullByDefault
         public ItemStack removeStackFromSlot (int slot) {
-            return null;
+            return ItemStack.EMPTY;
         }
 
         @Override
+        @MethodsReturnNonnullByDefault
         public ItemStack decrStackSize (int slot, int count) {
-            return null;
+            return ItemStack.EMPTY;
         }
 
         @Override

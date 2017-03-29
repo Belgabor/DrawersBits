@@ -9,6 +9,7 @@ import com.jaquadro.minecraft.storagedrawers.block.modeldata.DrawerStateModelDat
 import com.jaquadro.minecraft.storagedrawers.block.tile.TileEntityDrawers;
 import com.jaquadro.minecraft.storagedrawers.client.model.component.DrawerDecoratorModel;
 import com.jaquadro.minecraft.storagedrawers.client.model.component.DrawerSealedModel;
+import mcp.MethodsReturnNonnullByDefault;
 import mods.belgabor.bitdrawers.block.BlockBitDrawers;
 import mods.belgabor.bitdrawers.core.BlockRegistry;
 import net.minecraft.block.Block;
@@ -22,7 +23,11 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 import net.minecraftforge.common.property.IExtendedBlockState;
 import net.minecraftforge.common.util.Constants;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +36,7 @@ import java.util.List;
  * Based on CompDrawerModel by jaquadro
  */
 
+@SideOnly(Side.CLIENT)
 public final class BitDrawerModel
 {
     public static class Register extends DefaultRegister
@@ -106,7 +112,9 @@ public final class BitDrawerModel
         }
 
         @Override
-        public IBakedModel handleItemState (IBakedModel parent, ItemStack stack, World world, EntityLivingBase entity) {
+        @MethodsReturnNonnullByDefault
+        @ParametersAreNonnullByDefault
+        public IBakedModel handleItemState (IBakedModel parent, ItemStack stack, @Nullable World world, @Nullable EntityLivingBase entity) {
             if (stack == null)
                 return parent;
 

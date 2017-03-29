@@ -68,13 +68,13 @@ public class TileBitController extends TileEntityController /*implements IProtec
     }
 
     @Override
-    protected int insertItems(ItemStack stack, GameProfile profile) {
+    protected int insertItems(@Nonnull ItemStack stack, GameProfile profile) {
         if (stack.isEmpty())
             return 0;
         
         int count = -1;
         if (BitDrawers.config.debugTrace)
-            BDLogger.info("TileBitController:insertItems %s", stack==null?"null":stack.getDisplayName());
+            BDLogger.info("TileBitController:insertItems %s", stack.isEmpty()?"EMPTY":stack.getDisplayName());
         
         if (BitDrawers.config.allowBagMultiInsertion)
             count = insertBagItems(stack, profile);
@@ -90,12 +90,14 @@ public class TileBitController extends TileEntityController /*implements IProtec
         return count>0?count:0;
     }
     
-    protected int insertBagItems(ItemStack stack, GameProfile profile) {
+    protected int insertBagItems(@Nonnull ItemStack stack, GameProfile profile) {
         int count = 0;
         if (BitDrawers.config.debugTrace)
-            BDLogger.info("TileBitController:insertBagItems %s", stack==null?"null":stack.getDisplayName());
+            BDLogger.info("TileBitController:insertBagItems %s", stack.isEmpty()?"EMPTY":stack.getDisplayName());
         if ((!stack.isEmpty()) && stack.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
             IItemHandler handler = stack.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+            if (handler == null)
+                return 0;
             for(int i = 0; i < handler.getSlots(); i++) {
                 while (true) {
                     ItemStack extract = handler.extractItem(i, 64, true);
@@ -240,11 +242,7 @@ public class TileBitController extends TileEntityController /*implements IProtec
                     IBitBrush brush = BitDrawers.cnb_api.createBrush(item);
                     if (BitDrawers.config.debugTrace)
                         BDLogger.info("Rebuilding: %s %d %d %d", item.getDisplayName(), record.slot, i, brush.getStateID());
-                    List<SlotRecord> slotRecords = lookup.get(brush.getStateID());
-                    if (slotRecords == null) {
-                        slotRecords = new ArrayList<>();
-                        lookup.put(brush.getStateID(), slotRecords);
-                    }
+                    List<SlotRecord> slotRecords = lookup.computeIfAbsent(brush.getStateID(), k -> new ArrayList<>());
                     slotRecords.add(record);
                 } catch (APIExceptions.InvalidBitItem invalidBitItem) {}
             }
@@ -271,28 +269,31 @@ public class TileBitController extends TileEntityController /*implements IProtec
         
         drawerBitLookup.forEach((blockStateID, slotList) -> {
             try {
-                ItemStack bit = BitDrawers.cnb_api.getBitItem(new BitBrush(blockStateID).getState());
-                int addSlot = -1;
-                for (int i = 0; i < bag.getSlots(); i++) {
-                    ItemStack test = bag.getStackInSlot(i);
-                    if (test.isEmpty()) {
-                        if (addSlot == -1)
+                IBlockState state = new BitBrush(blockStateID).getState();
+                if (state != null) {
+                    ItemStack bit = BitDrawers.cnb_api.getBitItem(state);
+                    int addSlot = -1;
+                    for (int i = 0; i < bag.getSlots(); i++) {
+                        ItemStack test = bag.getStackInSlot(i);
+                        if (test.isEmpty()) {
+                            if (addSlot == -1)
+                                addSlot = i;
+                            continue;
+                        }
+                        if (test.getCount() < bag.getBitbagStackSize() && BitHelper.areItemsEqual(test, bit)) {
                             addSlot = i;
-                        continue;
+                            break;
+                        }
                     }
-                    if (test.getCount() < bag.getBitbagStackSize() && BitHelper.areItemsEqual(test, bit)) {
-                        addSlot = i;
-                        break;
+                    final int doAddSlot = addSlot;
+
+                    if (addSlot > -1) {
+                        slotList.stream().forEachOrdered(slotRecord -> {
+                            IDrawer drawer = getAccessibleBitDrawer(slotRecord, profile);
+                            if (drawer != null)
+                                result[0] += fillBagSlot(bag, doAddSlot, drawer);
+                        });
                     }
-                }
-                final int doAddSlot = addSlot;
-                
-                if (addSlot > -1) {
-                    slotList.stream().forEachOrdered(slotRecord -> {
-                        IDrawer drawer = getAccessibleBitDrawer(slotRecord, profile);
-                        if (drawer != null)
-                            result[0] += fillBagSlot(bag, doAddSlot, drawer);
-                    });
                 }
             } catch (APIExceptions.InvalidBitItem invalidBitItem) {}
         });
@@ -437,47 +438,6 @@ public class TileBitController extends TileEntityController /*implements IProtec
         return tag;
     }
 
-    /* IPorotectable stuff
-    @Override
-    public UUID getOwner() {
-        return null;
-    }
-
-    @Override
-    public boolean setOwner(UUID uuid) {
-        return false;
-    }
-
-    @Override
-    public ISecurityProvider getSecurityProvider() {
-        return StorageDrawers.securityRegistry.getProvider(securityKey);
-    }
-
-    @Override
-    public ILockableContainer getLockableContainer() {
-        return null;
-    }
-
-    @Override
-    public boolean setSecurityProvider(ISecurityProvider provider) {
-        if (!StorageDrawers.config.cache.enablePersonalUpgrades)
-            return false;
-
-        String newKey = (provider == null) ? null : provider.getProviderID();
-        if ((newKey != null && !newKey.equals(securityKey)) || (securityKey != null && !securityKey.equals(newKey))) {
-            securityKey = newKey;
-
-            if (getWorld() != null && !getWorld().isRemote) {
-                markDirty();
-
-                IBlockState state = getWorld().getBlockState(getPos());
-                getWorld().notifyBlockUpdate(getPos(), state, state, 3);
-            }
-        }
-
-        return true;
-    }
-    */
 
     protected static class BitCollectorData {
         protected final int count;
